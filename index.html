@@ -28,6 +28,16 @@ body{margin:0;background:var(--bg);color:var(--parchment);font-family:'Spectral'
 @keyframes flicker{0%,100%{opacity:1}50%{opacity:0.7}75%{opacity:0.9}}
 h1{font-family:'Cinzel',serif;font-weight:700;font-size:32px;letter-spacing:0.04em;margin:0;color:var(--amber);position:relative}
 .tagline{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--muted);letter-spacing:0.08em;text-transform:uppercase;margin-top:0.5rem;position:relative}
+.donate-link{
+  display:inline-flex;align-items:center;gap:0.4rem;
+  font-family:'JetBrains Mono',monospace;font-size:11px;
+  color:var(--muted);text-decoration:none;
+  border:1px solid var(--border);border-radius:20px;
+  padding:0.35rem 0.9rem;margin-top:1rem;
+  transition:color 0.15s, border-color 0.15s;
+  position:relative;
+}
+.donate-link:hover{color:var(--amber);border-color:var(--amber)}
 
 .panel{background:var(--panel);border:1px solid var(--border);border-radius:6px;padding:1.5rem;margin-bottom:1.25rem}
 .field{margin-bottom:1rem}
@@ -97,6 +107,9 @@ h1{font-family:'Cinzel',serif;font-weight:700;font-size:32px;letter-spacing:0.04
     <div class="glow"></div>
     <h1 id="sessionTitle">Der Kryptenrat</h1>
     <div class="tagline" id="tagline" data-i18n="tagline_default">D&amp;D Session</div>
+    <div>
+      <a href="https://paypal.me/larsbirkenhauer1" target="_blank" rel="noopener" class="donate-link">☕ Diese Sitzung mit einer Spende unterstützen</a>
+    </div>
   </div>
 
   <div class="panel" id="langPanel">
@@ -123,8 +136,8 @@ h1{font-family:'Cinzel',serif;font-weight:700;font-size:32px;letter-spacing:0.04
 
   <div class="panel" id="setup" style="display:none">
     <div class="field">
-      <label for="anthropicKey" data-i18n="api_key_label">Anthropic API Key</label>
-      <input type="password" id="anthropicKey" placeholder="sk-ant-...">
+      <label for="accessCode" data-i18n="api_key_label">Zugangscode</label>
+      <input type="password" id="accessCode" placeholder="Von dir erhaltener Zugangscode">
       <div class="hint" data-i18n="api_key_hint">Nötig, damit die App eigenständig läuft (auch außerhalb dieses Chats).</div>
     </div>
     <div class="field">
@@ -262,8 +275,8 @@ const TRANSLATIONS = {
   load_label: { de: "Gespeicherte Sitzung fortsetzen", en: "Resume saved session", es: "Continuar sesión guardada", fr: "Reprendre une session sauvegardée" },
   load_hint: { de: "Lädt eine zuvor gespeicherte .json-Sitzungsdatei mit vollständigem Verlauf, Charakteren und Zustand. API Key unten trotzdem eintragen.", en: "Loads a previously saved .json session file with full history, characters and state. Still enter your API key below.", es: "Carga un archivo de sesión .json guardado previamente con historial completo, personajes y estado. Introduce igualmente tu clave API abajo.", fr: "Charge un fichier de session .json précédemment sauvegardé avec l'historique complet, les personnages et l'état. Saisis quand même ta clé API ci-dessous." },
   continue_session_btn: { de: "Geladene Sitzung fortsetzen", en: "Continue loaded session", es: "Continuar sesión cargada", fr: "Continuer la session chargée" },
-  api_key_label: { de: "Anthropic API Key", en: "Anthropic API Key", es: "Clave API de Anthropic", fr: "Clé API Anthropic" },
-  api_key_hint: { de: "Nötig, damit die App eigenständig läuft (auch außerhalb dieses Chats).", en: "Needed so the app runs independently (also outside this chat).", es: "Necesaria para que la app funcione de forma independiente (también fuera de este chat).", fr: "Nécessaire pour que l'appli fonctionne de façon autonome (aussi en dehors de ce chat)." },
+  api_key_label: { de: "Zugangscode", en: "Access code", es: "Código de acceso", fr: "Code d'accès" },
+  api_key_hint: { de: "Die KI-Anbindung läuft über den zentralen Server, kein eigener API Key nötig.", en: "The AI connection runs through the central server, no personal API key needed.", es: "La conexión con la IA funciona a través del servidor central, no necesitas tu propia clave API.", fr: "La connexion à l'IA passe par le serveur central, aucune clé API personnelle nécessaire." },
   session_name_label: { de: "Sitzungsname", en: "Session name", es: "Nombre de la sesión", fr: "Nom de la session" },
   narrator_who_label: { de: "Wer übernimmt den Erzähler?", en: "Who plays the narrator?", es: "¿Quién hace de narrador?", fr: "Qui joue le narrateur ?" },
   narrator_who_user: { de: "Ich selbst", en: "Myself", es: "Yo mismo", fr: "Moi-même" },
@@ -404,7 +417,7 @@ function sanitizeKey(raw){
 let AGENTS = {};
 let CHAR_NAMES = [];
 let characterSpecies = {};
-let anthropicKey = "";
+let accessCode = "";
 let charFormValues = DEFAULT_CHAR_SLOTS.map(c => ({...c}));
 let currentCharCount = 1;
 let narratorMode = "user";
@@ -597,7 +610,7 @@ charFormsEl.addEventListener('change', (e) => {
 });
 
 function getAnthropicKeyLive(){
-  const key = sanitizeKey(document.getElementById('anthropicKey').value);
+  const key = sanitizeKey(document.getElementById('accessCode').value);
   if(!key){ alert('Bitte zuerst oben deinen Anthropic API Key eintragen.'); return null; }
   return key;
 }
@@ -670,7 +683,7 @@ async function buildAgentsFromForm(){
     } else {
       let creatureDesc = document.getElementById(`char${i}_creatureDesc`) ? document.getElementById(`char${i}_creatureDesc`).value.trim() : "";
       if(!creatureDesc){
-        const key = anthropicKey || getAnthropicKeyLive();
+        const key = accessCode || getAnthropicKeyLive();
         if(key){
           try{
             const sys = `Du erfindest kurze, einprägsame Kreaturbeschreibungen für ein Tabletop-Rollenspiel. Antworte NUR mit einem einzigen prägnanten Satz, ohne Einleitung, ohne Anführungszeichen. Antworte auf ${LANG_NAMES[uiLang]}.`;
@@ -965,17 +978,14 @@ function postProcess(text){
   return out;
 }
 
-async function callAnthropic(systemPrompt, userPrompt, keyOverride){
-  const resp = await fetch("https://api.anthropic.com/v1/messages", {
+async function callAnthropic(systemPrompt, userPrompt, codeOverride){
+  const resp = await fetch("/api/chat", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      "x-api-key": keyOverride || anthropicKey,
-      "anthropic-version": "2023-06-01",
-      "anthropic-dangerous-direct-browser-access": "true"
+      "x-access-code": codeOverride || accessCode
     },
     body: JSON.stringify({
-      model: "claude-sonnet-4-6",
       max_tokens: 400,
       system: systemPrompt,
       messages: [{role: "user", content: userPrompt}]
@@ -983,7 +993,10 @@ async function callAnthropic(systemPrompt, userPrompt, keyOverride){
   });
   if(!resp.ok){
     const errText = await resp.text();
-    throw new Error(`Anthropic API Fehler (${resp.status}): ${errText.slice(0,200)}`);
+    if(resp.status === 429){
+      throw new Error("Das Tageslimit für diese Sitzung ist erreicht. Morgen geht's weiter - oder unterstütze das Projekt mit einer Spende (Link oben), damit das Limit steigen kann.");
+    }
+    throw new Error(`Server-Fehler (${resp.status}): ${errText.slice(0,200)}`);
   }
   const data = await resp.json();
   return data.content.map(b => b.text || "").join("").trim();
@@ -1119,10 +1132,10 @@ async function submitHumanCharacterLine(name, rawText){
 }
 
 document.getElementById('startBtn').addEventListener('click', async () => {
-  const rawAnthropic = document.getElementById('anthropicKey').value.trim();
-  anthropicKey = sanitizeKey(rawAnthropic);
-  if(!anthropicKey){
-    alert('Bitte trag deinen Anthropic API Key ein.');
+  const rawAnthropic = document.getElementById('accessCode').value.trim();
+  accessCode = sanitizeKey(rawAnthropic);
+  if(!accessCode){
+    alert('Bitte trag deinen Zugangscode ein.');
     return;
   }
   const scene = document.getElementById('startScene').value.trim() || t('fallback_scene');
@@ -1221,7 +1234,7 @@ document.getElementById('manualDiceBtn').addEventListener('click', () => {
 document.getElementById('summarizeBtn').addEventListener('click', async () => {
   const btn = document.getElementById('summarizeBtn');
   if(!storyLog.length){ alert('Noch kein Verlauf vorhanden.'); return; }
-  const key = anthropicKey || getAnthropicKeyLive();
+  const key = accessCode || getAnthropicKeyLive();
   if(!key) return;
   btn.disabled = true;
   const original = btn.textContent;
@@ -1291,9 +1304,9 @@ document.getElementById('loadFile').addEventListener('change', (e) => {
 });
 
 document.getElementById('continueBtn').addEventListener('click', async () => {
-  const rawAnthropic = document.getElementById('anthropicKey').value.trim();
-  anthropicKey = sanitizeKey(rawAnthropic);
-  if(!anthropicKey){ alert('Bitte trag deinen Anthropic API Key ein.'); return; }
+  const rawAnthropic = document.getElementById('accessCode').value.trim();
+  accessCode = sanitizeKey(rawAnthropic);
+  if(!accessCode){ alert('Bitte trag deinen Zugangscode ein.'); return; }
   if(!loadedSessionData){ alert('Keine Sitzungsdatei geladen.'); return; }
 
   sessionNameGlobal = loadedSessionData.sessionName || "";
