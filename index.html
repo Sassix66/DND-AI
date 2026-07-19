@@ -129,7 +129,7 @@ h1{font-family:'Cinzel',serif;font-weight:700;font-size:32px;letter-spacing:0.04
     </div>
     <div class="field">
       <label for="sessionName" data-i18n="session_name_label">Sitzungsname</label>
-      <input type="text" id="sessionName" placeholder="z.B. Aschefall" value="Aschefall">
+      <input type="text" id="sessionName" placeholder="z.B. Aschefall" value="">
     </div>
     <div class="field">
       <label data-i18n="narrator_who_label">Wer übernimmt den Erzähler?</label>
@@ -142,7 +142,7 @@ h1{font-family:'Cinzel',serif;font-weight:700;font-size:32px;letter-spacing:0.04
     </div>
     <div class="field" id="narratorStyleField" style="display:none">
       <label for="narratorStyle" data-i18n="narrator_style_label">Erzähler-KI – Stil &amp; Persönlichkeit</label>
-      <textarea id="narratorStyle" rows="3" data-i18n="narrator_style_default">Du beschreibst Szenen humorvoll und lustig, aber immer knapp und auf den Punkt.</textarea>
+      <textarea id="narratorStyle" rows="3" data-i18n-placeholder="narrator_style_default" placeholder="Du beschreibst Szenen humorvoll und lustig, aber immer knapp und auf den Punkt."></textarea>
     </div>
     <div class="field">
       <label for="narratorDifficulty" data-i18n="difficulty_label">Erzähler-Schwierigkeit</label>
@@ -156,7 +156,7 @@ h1{font-family:'Cinzel',serif;font-weight:700;font-size:32px;letter-spacing:0.04
     </div>
     <div class="field">
       <label for="startScene" data-i18n="start_scene_label">Startszene (dein Text als Erzähler)</label>
-      <textarea id="startScene" data-i18n="start_scene_default">Die Gruppe wacht in einer postapokalyptischen Welt auf.</textarea>
+      <textarea id="startScene" data-i18n-placeholder="start_scene_default" placeholder="Die Gruppe wacht in einer postapokalyptischen Welt auf."></textarea>
       <div class="hint" data-i18n="start_scene_hint">Nenne den Namen eines Charakters darin, damit er direkt reagiert.</div>
     </div>
   </div>
@@ -335,7 +335,8 @@ const TRANSLATIONS = {
   species_detail_label: { de: "Genauer (optional)", en: "More specific (optional)", es: "Más detalle (opcional)", fr: "Plus précis (facultatif)" },
   creature_desc_label: { de: "Wesensart (was für eine Kreatur?)", en: "Nature (what kind of creature?)", es: "Naturaleza (¿qué tipo de criatura?)", fr: "Nature (quel genre de créature ?)" },
   creature_invent_btn: { de: "KI erfinden", en: "AI invent", es: "Inventar con IA", fr: "Inventer par IA" },
-  creature_hint: { de: "Wird einmal festgelegt und danach die ganze Sitzung über beibehalten.", en: "Set once and kept for the entire session afterwards.", es: "Se define una vez y se mantiene durante toda la sesión.", fr: "Défini une fois et conservé pendant toute la session." }
+  creature_hint: { de: "Wird einmal festgelegt und danach die ganze Sitzung über beibehalten.", en: "Set once and kept for the entire session afterwards.", es: "Se define una vez y se mantiene durante toda la sesión.", fr: "Défini une fois et conservé pendant toute la session." },
+  fallback_scene: { de: "Die Gruppe betritt die Dunkelheit.", en: "The group steps into the darkness.", es: "El grupo entra en la oscuridad.", fr: "Le groupe pénètre dans l'obscurité." }
 };
 
 function t(key){
@@ -377,9 +378,9 @@ document.querySelectorAll('.lang-btn').forEach(btn => {
 
 const COLOR_PALETTE = ["var(--grom)", "var(--lyra)", "#8AA4C4", "#C48A6A", "#9A7BC4", "#6AC4A0", "#C46A9A", "#B5A56A"];
 const DEFAULT_CHAR_SLOTS = [
-  { color: "var(--grom)", name: "Detlef", species: "mensch", speciesDetail: "", creatureDesc: "", bio: "Hoffnungslos.", quirk: "", secret: "", isHuman: false },
-  { color: "var(--lyra)", name: "Jessica", species: "mensch", speciesDetail: "", creatureDesc: "", bio: "Elegant, gehoben, eitel, sentimental.", quirk: "", secret: "", isHuman: false },
-  { color: "#8AA4C4", name: "Hubert", species: "mensch", speciesDetail: "", creatureDesc: "", bio: "Humorvoll, lustig, albern.", quirk: "", secret: "", isHuman: false }
+  { color: "var(--grom)", name: "", species: "mensch", speciesDetail: "", creatureDesc: "", bio: "", quirk: "", secret: "", isHuman: false },
+  { color: "var(--lyra)", name: "", species: "mensch", speciesDetail: "", creatureDesc: "", bio: "", quirk: "", secret: "", isHuman: false },
+  { color: "#8AA4C4", name: "", species: "mensch", speciesDetail: "", creatureDesc: "", bio: "", quirk: "", secret: "", isHuman: false }
 ];
 const NARRATOR_COLOR = "var(--erz)";
 const START_HP = 10;
@@ -511,7 +512,7 @@ function renderCharForms(count){
       <div class="row">
         <div class="field">
           <label>${t('name_label')}</label>
-          <input type="text" id="char${i}_name" value="${c.name}">
+          <input type="text" id="char${i}_name" value="${c.name}" placeholder="${t('char_label')} ${i+1}">
         </div>
       </div>
       <div class="row">
@@ -645,7 +646,7 @@ async function buildAgentsFromForm(){
   characterSpecies = {};
   for(let i = 0; i < currentCharCount; i++){
     const defaults = getCharValue(i);
-    const name = document.getElementById(`char${i}_name`).value.trim() || defaults.name;
+    const name = document.getElementById(`char${i}_name`).value.trim() || `${t('char_label')} ${i+1}`;
     const species = document.getElementById(`char${i}_species`).value;
     const isHuman = document.getElementById(`char${i}_human`).value === 'human';
     const bio = document.getElementById(`char${i}_bio`).value.trim() || defaults.bio;
@@ -1124,7 +1125,7 @@ document.getElementById('startBtn').addEventListener('click', async () => {
     alert('Bitte trag deinen Anthropic API Key ein.');
     return;
   }
-  const scene = document.getElementById('startScene').value.trim() || "Die Gruppe betritt die Dunkelheit.";
+  const scene = document.getElementById('startScene').value.trim() || t('fallback_scene');
   sessionNameGlobal = document.getElementById('sessionName').value.trim();
   document.getElementById('sessionTitle').textContent = sessionNameGlobal || "D&D Session";
   document.getElementById('tagline').textContent = narratorMode === 'ai' ? "KI-Erzähler & Charaktere · D&D Session" : "Du als Erzähler & KI-Charaktere · D&D Session";
