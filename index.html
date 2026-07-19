@@ -168,6 +168,12 @@ h1{font-family:'Cinzel',serif;font-weight:700;font-size:32px;letter-spacing:0.04
       <div class="hint" data-i18n="difficulty_hint">Beeinflusst, wie oft gewürfelt werden muss und wie hoch die Schwierigkeitsgrade sind.</div>
     </div>
     <div class="field">
+      <label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;text-transform:none;letter-spacing:0;font-family:'Spectral',serif;font-size:14px;color:var(--parchment)">
+        <input type="checkbox" id="typewriterToggle" checked style="width:auto">
+        <span data-i18n="typewriter_toggle">Tippmaschinen-Effekt für KI-Texte</span>
+      </label>
+    </div>
+    <div class="field">
       <label for="startScene" data-i18n="start_scene_label">Startszene (dein Text als Erzähler)</label>
       <textarea id="startScene" data-i18n-placeholder="start_scene_default" placeholder="Die Gruppe wacht in einer postapokalyptischen Welt auf."></textarea>
       <div class="hint" data-i18n="start_scene_hint">Nenne den Namen eines Charakters darin, damit er direkt reagiert.</div>
@@ -349,7 +355,8 @@ const TRANSLATIONS = {
   creature_desc_label: { de: "Wesensart (was für eine Kreatur?)", en: "Nature (what kind of creature?)", es: "Naturaleza (¿qué tipo de criatura?)", fr: "Nature (quel genre de créature ?)" },
   creature_invent_btn: { de: "KI erfinden", en: "AI invent", es: "Inventar con IA", fr: "Inventer par IA" },
   creature_hint: { de: "Wird einmal festgelegt und danach die ganze Sitzung über beibehalten.", en: "Set once and kept for the entire session afterwards.", es: "Se define una vez y se mantiene durante toda la sesión.", fr: "Défini une fois et conservé pendant toute la session." },
-  fallback_scene: { de: "Die Gruppe betritt die Dunkelheit.", en: "The group steps into the darkness.", es: "El grupo entra en la oscuridad.", fr: "Le groupe pénètre dans l'obscurité." }
+  fallback_scene: { de: "Die Gruppe betritt die Dunkelheit.", en: "The group steps into the darkness.", es: "El grupo entra en la oscuridad.", fr: "Le groupe pénètre dans l'obscurité." },
+  typewriter_toggle: { de: "Tippmaschinen-Effekt für KI-Texte", en: "Typewriter effect for AI text", es: "Efecto de máquina de escribir para texto de la IA", fr: "Effet machine à écrire pour le texte de l'IA" }
 };
 
 function t(key){
@@ -819,14 +826,39 @@ function highlightText(text){
   return escaped;
 }
 
-function appendEntry(speaker, text, isSystem){
+let typewriterEnabled = true;
+
+function typewriterReveal(el, text){
+  let i = 0;
+  const speed = 16;
+  el.textContent = '';
+  function step(){
+    i++;
+    el.textContent = text.slice(0, i);
+    logEl.scrollTop = logEl.scrollHeight;
+    if(i < text.length){
+      setTimeout(step, speed);
+    } else {
+      el.innerHTML = highlightText(text);
+    }
+  }
+  step();
+}
+
+function appendEntry(speaker, text, isSystem, animate){
   const color = AGENTS[speaker] ? AGENTS[speaker].color : 'var(--muted)';
   const div = document.createElement('div');
   div.className = 'entry' + (isSystem ? ' system' : '');
   div.style.setProperty('--entry-color', color);
-  div.innerHTML = `<div class="speaker">${speaker}</div><div class="text">${isSystem ? escapeHtml(text) : highlightText(text)}</div>`;
+  div.innerHTML = `<div class="speaker">${speaker}</div><div class="text"></div>`;
+  const textEl = div.querySelector('.text');
   logEl.appendChild(div);
   logEl.scrollTop = logEl.scrollHeight;
+  if(animate && typewriterEnabled && !isSystem){
+    typewriterReveal(textEl, text);
+  } else {
+    textEl.innerHTML = isSystem ? escapeHtml(text) : highlightText(text);
+  }
 }
 
 function setStatus(msg, isError){
@@ -1040,10 +1072,10 @@ function findMentionedCharacters(text){
   return mentions.map(m => m.name);
 }
 
-async function finalizeAndAppend(speaker, text){
+async function finalizeAndAppend(speaker, text, isHumanAuthored){
   const clean = postProcess(text);
   storyLog.push({speaker, text: clean});
-  appendEntry(speaker, clean);
+  appendEntry(speaker, clean, false, !isHumanAuthored);
   const words = DICE_WORDS[uiLang];
   const prefixEsc = words.prefix.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
   if(new RegExp(`${prefixEsc}: ${words.critSuccess}`, 'i').test(clean)) playDiceSound('crit-success');
@@ -1076,7 +1108,7 @@ async function cascadeCharacterReactions(text){
 async function submitUserNarration(rawText){
   if(!rawText) return;
   const resolved = resolveDiceSimple(rawText);
-  await finalizeAndAppend("Erzähler", resolved);
+  await finalizeAndAppend("Erzähler", resolved, true);
   await cascadeCharacterReactions(resolved);
 }
 
@@ -1116,7 +1148,7 @@ async function submitHumanCharacterLine(name, rawText){
   if(!rawText) return;
   autoNarrateCount = 0;
   const resolved = resolveDiceSimple(rawText);
-  await finalizeAndAppend(name, resolved);
+  await finalizeAndAppend(name, resolved, true);
   if(narratorMode === 'ai'){
     setStatus("Erzähler überlegt...");
     try{
@@ -1189,6 +1221,10 @@ document.getElementById('aiNarrateBtn').addEventListener('click', async () => {
 
 document.getElementById('autoNarrateToggle').addEventListener('change', (e) => {
   autoNarrate = e.target.checked;
+});
+
+document.getElementById('typewriterToggle').addEventListener('change', (e) => {
+  typewriterEnabled = e.target.checked;
 });
 
 document.getElementById('humanCharBtn').addEventListener('click', async () => {
