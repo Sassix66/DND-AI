@@ -2,7 +2,7 @@
 <html lang="de">
 <head>
 <meta charset="UTF-8">
-<title>Kryptenrat – D&D Session</title>
+<title>DnD AI</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&family=Spectral:ital,wght@0,400;0,600;1,400&family=JetBrains+Mono:wght@400;500&display=swap');
 
@@ -95,7 +95,7 @@ h1{font-family:'Cinzel',serif;font-weight:700;font-size:32px;letter-spacing:0.04
 
   <div class="header">
     <div class="glow"></div>
-    <h1 id="sessionTitle">Der Kryptenrat</h1>
+    <h1 id="sessionTitle"></h1>
     <div class="tagline" id="tagline">D&amp;D Session</div>
   </div>
 
@@ -130,7 +130,7 @@ h1{font-family:'Cinzel',serif;font-weight:700;font-size:32px;letter-spacing:0.04
     </div>
     <div class="field" id="narratorStyleField" style="display:none">
       <label for="narratorStyle">Erzähler-KI – Stil &amp; Persönlichkeit</label>
-      <textarea id="narratorStyle" rows="3">Du beschreibst Szenen humorvoll und lustig, aber immer knapp und auf den Punkt.</textarea>
+      <textarea id="narratorStyle" rows="3"></textarea>
     </div>
     <div class="field">
       <label for="narratorDifficulty">Erzähler-Schwierigkeit</label>
@@ -152,7 +152,7 @@ h1{font-family:'Cinzel',serif;font-weight:700;font-size:32px;letter-spacing:0.04
   <div class="panel" id="charEditor">
     <div class="field" style="margin-bottom:1rem">
       <label for="charCount">Anzahl Charaktere</label>
-      <input type="number" id="charCount" min="1" max="8" value="3" style="max-width:120px">
+      <input type="number" id="charCount" min="1" max="8" value="1" style="max-width:120px">
     </div>
     <div class="field" style="margin-bottom:1.25rem">
       <label style="font-size:13px;color:var(--parchment)">Charaktere</label>
@@ -237,9 +237,7 @@ h1{font-family:'Cinzel',serif;font-weight:700;font-size:32px;letter-spacing:0.04
 <script>
 const COLOR_PALETTE = ["var(--grom)", "var(--lyra)", "#8AA4C4", "#C48A6A", "#9A7BC4", "#6AC4A0", "#C46A9A", "#B5A56A"];
 const DEFAULT_CHAR_SLOTS = [
-  { color: "var(--grom)", name: "Detlef", species: "mensch", speciesDetail: "", creatureDesc: "", bio: "Hoffnungslos.", quirk: "", secret: "", isHuman: false },
-  { color: "var(--lyra)", name: "Jessica", species: "mensch", speciesDetail: "", creatureDesc: "", bio: "Elegant, gehoben, eitel, sentimental.", quirk: "", secret: "", isHuman: false },
-  { color: "#8AA4C4", name: "Hubert", species: "mensch", speciesDetail: "", creatureDesc: "", bio: "Humorvoll, lustig, albern.", quirk: "", secret: "", isHuman: false }
+  { color: "var(--grom)", name: "", species: "mensch", speciesDetail: "", creatureDesc: "", bio: "", quirk: "", secret: "", isHuman: false },
 ];
 const NARRATOR_COLOR = "var(--erz)";
 const START_HP = 10;
