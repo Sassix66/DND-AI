@@ -2,7 +2,7 @@
 <html lang="de">
 <head>
 <meta charset="UTF-8">
-<title>DnD AI</title>
+<title>Kryptenrat – D&D Session</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&family=Spectral:ital,wght@0,400;0,600;1,400&family=JetBrains+Mono:wght@400;500&display=swap');
 
@@ -95,7 +95,7 @@ h1{font-family:'Cinzel',serif;font-weight:700;font-size:32px;letter-spacing:0.04
 
   <div class="header">
     <div class="glow"></div>
-    <h1 id="sessionTitle">Deine DnD Session</h1>
+    <h1 id="sessionTitle">Der Kryptenrat</h1>
     <div class="tagline" id="tagline">D&amp;D Session</div>
   </div>
 
@@ -111,13 +111,13 @@ h1{font-family:'Cinzel',serif;font-weight:700;font-size:32px;letter-spacing:0.04
 
   <div class="panel" id="setup">
     <div class="field">
-      <label for="anthropicKey">Anthropic API Key</label>
-      <input type="password" id="anthropicKey" placeholder="sk-ant-...">
-      <div class="hint">Nötig, damit die App eigenständig läuft (auch außerhalb dieses Chats).</div>
+      <label for="accessCode">Zugangscode</label>
+      <input type="password" id="accessCode" placeholder="Von dir erhaltener Zugangscode">
+      <div class="hint">Die KI-Anbindung läuft über den zentralen Server, kein eigener API Key nötig.</div>
     </div>
     <div class="field">
       <label for="sessionName">Sitzungsname</label>
-      <input type="text" id="sessionName" placeholder="z.B. Aschefall" value="">
+      <input type="text" id="sessionName" placeholder="z.B. Aschefall" value="Aschefall">
     </div>
     <div class="field">
       <label>Wer übernimmt den Erzähler?</label>
@@ -130,7 +130,7 @@ h1{font-family:'Cinzel',serif;font-weight:700;font-size:32px;letter-spacing:0.04
     </div>
     <div class="field" id="narratorStyleField" style="display:none">
       <label for="narratorStyle">Erzähler-KI – Stil &amp; Persönlichkeit</label>
-      <textarea id="narratorStyle" rows="3"></textarea>
+      <textarea id="narratorStyle" rows="3">Du beschreibst Szenen humorvoll und lustig, aber immer knapp und auf den Punkt.</textarea>
     </div>
     <div class="field">
       <label for="narratorDifficulty">Erzähler-Schwierigkeit</label>
@@ -144,7 +144,7 @@ h1{font-family:'Cinzel',serif;font-weight:700;font-size:32px;letter-spacing:0.04
     </div>
     <div class="field">
       <label for="startScene">Startszene (dein Text als Erzähler)</label>
-      <textarea id="startScene"></textarea>
+      <textarea id="startScene">Die Gruppe wacht in einer postapokalyptischen Welt auf.</textarea>
       <div class="hint">Nenne den Namen eines Charakters darin, damit er direkt reagiert.</div>
     </div>
   </div>
@@ -152,7 +152,7 @@ h1{font-family:'Cinzel',serif;font-weight:700;font-size:32px;letter-spacing:0.04
   <div class="panel" id="charEditor">
     <div class="field" style="margin-bottom:1rem">
       <label for="charCount">Anzahl Charaktere</label>
-      <input type="number" id="charCount" min="1" max="8" value="1" style="max-width:120px">
+      <input type="number" id="charCount" min="1" max="8" value="3" style="max-width:120px">
     </div>
     <div class="field" style="margin-bottom:1.25rem">
       <label style="font-size:13px;color:var(--parchment)">Charaktere</label>
@@ -237,7 +237,9 @@ h1{font-family:'Cinzel',serif;font-weight:700;font-size:32px;letter-spacing:0.04
 <script>
 const COLOR_PALETTE = ["var(--grom)", "var(--lyra)", "#8AA4C4", "#C48A6A", "#9A7BC4", "#6AC4A0", "#C46A9A", "#B5A56A"];
 const DEFAULT_CHAR_SLOTS = [
-  { color: "var(--grom)", name: "Spieler", species: "mensch", speciesDetail: "", creatureDesc: "", bio: "", quirk: "", secret: "", isHuman: false },
+  { color: "var(--grom)", name: "Detlef", species: "mensch", speciesDetail: "", creatureDesc: "", bio: "Hoffnungslos.", quirk: "", secret: "", isHuman: false },
+  { color: "var(--lyra)", name: "Jessica", species: "mensch", speciesDetail: "", creatureDesc: "", bio: "Elegant, gehoben, eitel, sentimental.", quirk: "", secret: "", isHuman: false },
+  { color: "#8AA4C4", name: "Hubert", species: "mensch", speciesDetail: "", creatureDesc: "", bio: "Humorvoll, lustig, albern.", quirk: "", secret: "", isHuman: false }
 ];
 const NARRATOR_COLOR = "var(--erz)";
 const START_HP = 10;
@@ -261,7 +263,7 @@ function sanitizeKey(raw){
 let AGENTS = {};
 let CHAR_NAMES = [];
 let characterSpecies = {};
-let anthropicKey = "";
+let accessCode = "";
 let charFormValues = DEFAULT_CHAR_SLOTS.map(c => ({...c}));
 let currentCharCount = 3;
 let narratorMode = "user";
@@ -454,8 +456,8 @@ charFormsEl.addEventListener('change', (e) => {
 });
 
 function getAnthropicKeyLive(){
-  const key = sanitizeKey(document.getElementById('anthropicKey').value);
-  if(!key){ alert('Bitte zuerst oben deinen Anthropic API Key eintragen.'); return null; }
+  const key = sanitizeKey(document.getElementById('accessCode').value);
+  if(!key){ alert('Bitte zuerst oben deinen Zugangscode eintragen.'); return null; }
   return key;
 }
 
@@ -527,7 +529,7 @@ async function buildAgentsFromForm(){
     } else {
       let creatureDesc = document.getElementById(`char${i}_creatureDesc`) ? document.getElementById(`char${i}_creatureDesc`).value.trim() : "";
       if(!creatureDesc){
-        const key = anthropicKey || getAnthropicKeyLive();
+        const key = accessCode || getAnthropicKeyLive();
         if(key){
           try{
             const sys = "Du erfindest kurze, einprägsame Kreaturbeschreibungen für ein Tabletop-Rollenspiel. Antworte NUR mit einem einzigen prägnanten Satz, ohne Einleitung, ohne Anführungszeichen.";
@@ -814,17 +816,14 @@ function postProcess(text){
   return out;
 }
 
-async function callAnthropic(systemPrompt, userPrompt, keyOverride){
-  const resp = await fetch("https://api.anthropic.com/v1/messages", {
+async function callAnthropic(systemPrompt, userPrompt, codeOverride){
+  const resp = await fetch("/api/chat", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      "x-api-key": keyOverride || anthropicKey,
-      "anthropic-version": "2023-06-01",
-      "anthropic-dangerous-direct-browser-access": "true"
+      "x-access-code": codeOverride || accessCode
     },
     body: JSON.stringify({
-      model: "claude-sonnet-4-6",
       max_tokens: 400,
       system: systemPrompt,
       messages: [{role: "user", content: userPrompt}]
@@ -832,7 +831,7 @@ async function callAnthropic(systemPrompt, userPrompt, keyOverride){
   });
   if(!resp.ok){
     const errText = await resp.text();
-    throw new Error(`Anthropic API Fehler (${resp.status}): ${errText.slice(0,200)}`);
+    throw new Error(`Server-Fehler (${resp.status}): ${errText.slice(0,200)}`);
   }
   const data = await resp.json();
   return data.content.map(b => b.text || "").join("").trim();
@@ -966,10 +965,10 @@ async function submitHumanCharacterLine(name, rawText){
 }
 
 document.getElementById('startBtn').addEventListener('click', async () => {
-  const rawAnthropic = document.getElementById('anthropicKey').value.trim();
-  anthropicKey = sanitizeKey(rawAnthropic);
-  if(!anthropicKey){
-    alert('Bitte trag deinen Anthropic API Key ein.');
+  const rawAnthropic = document.getElementById('accessCode').value.trim();
+  accessCode = sanitizeKey(rawAnthropic);
+  if(!accessCode){
+    alert('Bitte trag deinen Zugangscode ein.');
     return;
   }
   const scene = document.getElementById('startScene').value.trim() || "Die Gruppe betritt die Dunkelheit.";
@@ -1068,7 +1067,7 @@ document.getElementById('manualDiceBtn').addEventListener('click', () => {
 document.getElementById('summarizeBtn').addEventListener('click', async () => {
   const btn = document.getElementById('summarizeBtn');
   if(!storyLog.length){ alert('Noch kein Verlauf vorhanden.'); return; }
-  const key = anthropicKey || getAnthropicKeyLive();
+  const key = accessCode || getAnthropicKeyLive();
   if(!key) return;
   btn.disabled = true;
   const original = btn.textContent;
@@ -1138,9 +1137,9 @@ document.getElementById('loadFile').addEventListener('change', (e) => {
 });
 
 document.getElementById('continueBtn').addEventListener('click', async () => {
-  const rawAnthropic = document.getElementById('anthropicKey').value.trim();
-  anthropicKey = sanitizeKey(rawAnthropic);
-  if(!anthropicKey){ alert('Bitte trag deinen Anthropic API Key ein.'); return; }
+  const rawAnthropic = document.getElementById('accessCode').value.trim();
+  accessCode = sanitizeKey(rawAnthropic);
+  if(!accessCode){ alert('Bitte trag deinen Zugangscode ein.'); return; }
   if(!loadedSessionData){ alert('Keine Sitzungsdatei geladen.'); return; }
 
   sessionNameGlobal = loadedSessionData.sessionName || "";
