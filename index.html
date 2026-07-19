@@ -1,969 +1,720 @@
 <!DOCTYPE html>
 <html lang="de">
 <head>
-    <meta charset="UTF-8">
-    <title>DnD AI</title>
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&family=Spectral:ital,wght@0,400;0,600;1,400&family=JetBrains+Mono:wght@400;500&display=swap');
-
-        :root {
-            --bg: #15100C;
-            --panel: #1E1712;
-            --panel-2: #241C15;
-            --border: #3A2E22;
-            --amber: #D9A441;
-            --ember: #B23A2E;
-            --parchment: #EDE3D0;
-            --muted: #9B8F7C;
-            --erz: #D9A441;
-            --grom: #B23A2E;
-            --lyra: #7B9E7A;
-        }
-
-        * {
-            box-sizing: border-box
-        }
-
-        body {
-            margin: 0;
-            background: var(--bg);
-            color: var(--parchment);
-            font-family: 'Spectral',serif;
-            padding: 2rem 1.25rem;
-            min-height: 100vh
-        }
-
-        .wrap {
-            max-width: 760px;
-            margin: 0 auto;
-            position: relative
-        }
-
-        .header {
-            text-align: center;
-            padding: 2rem 1rem 2.5rem;
-            position: relative
-        }
-
-        .glow {
-            position: absolute;
-            top: 0;
-            left: 50%;
-            width: 400px;
-            height: 200px;
-            transform: translateX(-50%);
-            background: radial-gradient(ellipse at center, rgba(217,164,65,0.16) 0%, transparent 70%);
-            animation: flicker 4s ease-in-out infinite;
-            pointer-events: none
-        }
-
-        @keyframes flicker {
-            0%,100% {
-                opacity: 1
-            }
-
-            50% {
-                opacity: 0.7
-            }
-
-            75% {
-                opacity: 0.9
-            }
-        }
-
-        h1 {
-            font-family: 'Cinzel',serif;
-            font-weight: 700;
-            font-size: 32px;
-            letter-spacing: 0.04em;
-            margin: 0;
-            color: var(--amber);
-            position: relative
-        }
-
-        .tagline {
-            font-family: 'JetBrains Mono',monospace;
-            font-size: 12px;
-            color: var(--muted);
-            letter-spacing: 0.08em;
-            text-transform: uppercase;
-            margin-top: 0.5rem;
-            position: relative
-        }
-
-        .donate-link {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.4rem;
-            font-family: 'JetBrains Mono',monospace;
-            font-size: 11px;
-            color: var(--muted);
-            text-decoration: none;
-            border: 1px solid var(--border);
-            border-radius: 20px;
-            padding: 0.35rem 0.9rem;
-            margin-top: 1rem;
-            transition: color 0.15s, border-color 0.15s;
-            position: relative;
-        }
-
-            .donate-link:hover {
-                color: var(--amber);
-                border-color: var(--amber)
-            }
-
-        .panel {
-            background: var(--panel);
-            border: 1px solid var(--border);
-            border-radius: 6px;
-            padding: 1.5rem;
-            margin-bottom: 1.25rem
-        }
-
-        .field {
-            margin-bottom: 1rem
-        }
-
-            .field label {
-                display: block;
-                font-family: 'JetBrains Mono',monospace;
-                font-size: 11px;
-                text-transform: uppercase;
-                letter-spacing: 0.06em;
-                color: var(--muted);
-                margin-bottom: 0.4rem
-            }
-
-            .field input, .field textarea, .field select {
-                width: 100%;
-                background: var(--panel-2);
-                border: 1px solid var(--border);
-                color: var(--parchment);
-                font-family: 'Spectral',serif;
-                font-size: 15px;
-                padding: 0.6rem 0.75rem;
-                border-radius: 4px
-            }
-
-            .field textarea {
-                resize: vertical;
-                min-height: 60px
-            }
-
-        .hint {
-            font-size: 12px;
-            color: var(--muted);
-            margin-top: 0.35rem;
-            font-style: italic
-        }
-
-        .radiogroup {
-            display: flex;
-            gap: 1rem;
-            flex-wrap: wrap
-        }
-
-            .radiogroup label {
-                display: flex;
-                align-items: center;
-                gap: 0.4rem;
-                font-family: 'Spectral',serif;
-                font-size: 14px;
-                color: var(--parchment);
-                text-transform: none;
-                letter-spacing: 0;
-                font-weight: normal;
-                border: 1px solid var(--border);
-                border-radius: 4px;
-                padding: 0.5rem 0.9rem;
-                cursor: pointer
-            }
-
-            .radiogroup input {
-                width: auto
-            }
-
-            .radiogroup label.checked {
-                border-color: var(--amber);
-                color: var(--amber)
-            }
-
-            .radiogroup input:disabled ~ * {
-                opacity: 0.5
-            }
-
-        .charform {
-            border: 1px solid var(--border);
-            border-radius: 6px;
-            padding: 1rem 1.1rem;
-            margin-bottom: 0.9rem;
-            background: var(--panel-2)
-        }
-
-            .charform .row {
-                display: flex;
-                gap: 0.75rem;
-                flex-wrap: wrap
-            }
-
-                .charform .row .field {
-                    flex: 1;
-                    min-width: 140px
-                }
-
-            .charform .swatch {
-                width: 10px;
-                height: 10px;
-                border-radius: 50%;
-                display: inline-block;
-                margin-right: 0.5rem;
-                vertical-align: middle
-            }
-
-            .charform details {
-                margin-top: 0.4rem
-            }
-
-            .charform summary {
-                font-family: 'JetBrains Mono',monospace;
-                font-size: 11px;
-                color: var(--muted);
-                text-transform: uppercase;
-                letter-spacing: 0.06em;
-                cursor: pointer;
-                margin-bottom: 0.6rem
-            }
-
-        .btn {
-            font-family: 'JetBrains Mono',monospace;
-            font-size: 12px;
-            text-transform: uppercase;
-            letter-spacing: 0.06em;
-            background: transparent;
-            border: 1px solid var(--amber);
-            color: var(--amber);
-            padding: 0.65rem 1.3rem;
-            border-radius: 4px;
-            cursor: pointer;
-            transition: background 0.15s
-        }
-
-            .btn:hover {
-                background: rgba(217,164,65,0.12)
-            }
-
-            .btn:disabled {
-                opacity: 0.4;
-                cursor: default
-            }
-
-            .btn.secondary {
-                border-color: var(--border);
-                color: var(--muted)
-            }
-
-                .btn.secondary:hover {
-                    background: rgba(255,255,255,0.03)
-                }
-
-        .roster {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-            gap: 0.75rem;
-            margin-bottom: 1.25rem
-        }
-
-        .card {
-            background: var(--panel);
-            border: 1px solid var(--border);
-            border-radius: 6px;
-            padding: 0.9rem;
-            text-align: center;
-            transition: box-shadow 0.3s
-        }
-
-            .card.active {
-                box-shadow: 0 0 0 1px var(--card-color, var(--amber)), 0 0 18px -2px var(--card-color, var(--amber))
-            }
-
-            .card .dot {
-                width: 10px;
-                height: 10px;
-                border-radius: 50%;
-                background: var(--card-color, var(--amber));
-                margin: 0 auto 0.5rem;
-                opacity: 0.5
-            }
-
-            .card.active .dot {
-                opacity: 1;
-                animation: pulse 1s ease-in-out infinite
-            }
-
-        @keyframes pulse {
-            0%,100% {
-                transform: scale(1)
-            }
-
-            50% {
-                transform: scale(1.4)
-            }
-        }
-
-        .card .name {
-            font-family: 'Cinzel',serif;
-            font-size: 14px;
-            font-weight: 500
-        }
-
-        .card .role {
-            font-family: 'JetBrains Mono',monospace;
-            font-size: 10px;
-            color: var(--muted);
-            text-transform: uppercase;
-            margin-top: 2px
-        }
-
-        .card .hp {
-            font-family: 'JetBrains Mono',monospace;
-            font-size: 11px;
-            color: var(--parchment);
-            margin-top: 0.5rem
-        }
-
-        .card .hpbar {
-            width: 100%;
-            height: 4px;
-            background: var(--panel-2);
-            border-radius: 2px;
-            margin-top: 3px;
-            overflow: hidden
-        }
-
-        .card .hpbar-fill {
-            height: 100%;
-            background: var(--card-color, var(--amber))
-        }
-
-        .card .inv {
-            font-size: 10px;
-            color: var(--muted);
-            margin-top: 0.4rem;
-            line-height: 1.4
-        }
-
-        .card .status-badges {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 3px;
-            justify-content: center;
-            margin-top: 0.4rem
-        }
-
-        .card .status-badge {
-            font-size: 9px;
-            font-family: 'JetBrains Mono',monospace;
-            background: var(--panel-2);
-            border: 1px solid var(--border);
-            color: var(--amber);
-            padding: 1px 5px;
-            border-radius: 8px
-        }
-
-        .card .initiative-badge {
-            position: absolute;
-            top: 6px;
-            right: 6px;
-            font-family: 'JetBrains Mono',monospace;
-            font-size: 10px;
-            background: var(--amber);
-            color: var(--bg);
-            border-radius: 50%;
-            width: 18px;
-            height: 18px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: 600
-        }
-
-        .card {
-            position: relative
-        }
-
-        .quest-item {
-            display: flex;
-            align-items: flex-start;
-            gap: 0.5rem;
-            padding: 0.3rem 0;
-            font-size: 14px
-        }
-
-            .quest-item.done {
-                color: var(--muted);
-                text-decoration: line-through
-            }
-
-            .quest-item .quest-dot {
-                color: var(--amber);
-                flex-shrink: 0
-            }
-
-        .log {
-            background: var(--panel);
-            border: 1px solid var(--border);
-            border-radius: 6px;
-            padding: 0.5rem 0;
-            max-height: 420px;
-            overflow-y: auto;
-            margin-bottom: 1rem
-        }
-
-        .entry {
-            padding: 0.85rem 1.25rem;
-            border-left: 3px solid var(--entry-color, var(--muted))
-        }
-
-            .entry .speaker {
-                font-family: 'JetBrains Mono',monospace;
-                font-size: 11px;
-                text-transform: uppercase;
-                letter-spacing: 0.05em;
-                color: var(--entry-color, var(--muted));
-                margin-bottom: 0.3rem
-            }
-
-            .entry .text {
-                font-size: 15px;
-                line-height: 1.6
-            }
-
-            .entry.system .text {
-                font-family: 'JetBrains Mono',monospace;
-                font-size: 12px;
-                color: var(--muted);
-                font-style: normal
-            }
-
-            .entry .text .dice-success {
-                color: #7BC47F;
-                font-weight: 600
-            }
-
-            .entry .text .dice-fail {
-                color: #E0685E;
-                font-weight: 600
-            }
-
-            .entry .text .dialogue {
-                color: #6FA8D9
-            }
-
-        .controls {
-            display: flex;
-            gap: 0.75rem;
-            align-items: center;
-            flex-wrap: wrap
-        }
-
-        .status {
-            font-family: 'JetBrains Mono',monospace;
-            font-size: 12px;
-            color: var(--muted);
-            min-height: 1.2em;
-            margin-top: 0.75rem
-        }
-
-            .status.error {
-                color: var(--ember)
-            }
-    </style>
+<meta charset="UTF-8">
+<title>Kryptenrat – D&D Session</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&family=Spectral:ital,wght@0,400;0,600;1,400&family=JetBrains+Mono:wght@400;500&display=swap');
+
+:root{
+  --bg:#15100C;
+  --panel:#1E1712;
+  --panel-2:#241C15;
+  --border:#3A2E22;
+  --amber:#D9A441;
+  --ember:#B23A2E;
+  --parchment:#EDE3D0;
+  --muted:#9B8F7C;
+  --erz:#D9A441;
+  --grom:#B23A2E;
+  --lyra:#7B9E7A;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--parchment);font-family:'Spectral',serif;padding:2rem 1.25rem;min-height:100vh}
+.wrap{max-width:760px;margin:0 auto;position:relative}
+
+.header{text-align:center;padding:2rem 1rem 2.5rem;position:relative}
+.glow{position:absolute;top:0;left:50%;width:400px;height:200px;transform:translateX(-50%);background:radial-gradient(ellipse at center, rgba(217,164,65,0.16) 0%, transparent 70%);animation:flicker 4s ease-in-out infinite;pointer-events:none}
+@keyframes flicker{0%,100%{opacity:1}50%{opacity:0.7}75%{opacity:0.9}}
+h1{font-family:'Cinzel',serif;font-weight:700;font-size:32px;letter-spacing:0.04em;margin:0;color:var(--amber);position:relative}
+.tagline{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--muted);letter-spacing:0.08em;text-transform:uppercase;margin-top:0.5rem;position:relative}
+
+.panel{background:var(--panel);border:1px solid var(--border);border-radius:6px;padding:1.5rem;margin-bottom:1.25rem}
+.field{margin-bottom:1rem}
+.field label{display:block;font-family:'JetBrains Mono',monospace;font-size:11px;text-transform:uppercase;letter-spacing:0.06em;color:var(--muted);margin-bottom:0.4rem}
+.field input, .field textarea, .field select{width:100%;background:var(--panel-2);border:1px solid var(--border);color:var(--parchment);font-family:'Spectral',serif;font-size:15px;padding:0.6rem 0.75rem;border-radius:4px}
+.field textarea{resize:vertical;min-height:60px}
+.hint{font-size:12px;color:var(--muted);margin-top:0.35rem;font-style:italic}
+
+.radiogroup{display:flex;gap:1rem;flex-wrap:wrap}
+.radiogroup label{display:flex;align-items:center;gap:0.4rem;font-family:'Spectral',serif;font-size:14px;color:var(--parchment);text-transform:none;letter-spacing:0;font-weight:normal;border:1px solid var(--border);border-radius:4px;padding:0.5rem 0.9rem;cursor:pointer}
+.radiogroup input{width:auto}
+.radiogroup label.checked{border-color:var(--amber);color:var(--amber)}
+.radiogroup input:disabled ~ *{opacity:0.5}
+
+.charform{border:1px solid var(--border);border-radius:6px;padding:1rem 1.1rem;margin-bottom:0.9rem;background:var(--panel-2)}
+.charform .row{display:flex;gap:0.75rem;flex-wrap:wrap}
+.charform .row .field{flex:1;min-width:140px}
+.charform .swatch{width:10px;height:10px;border-radius:50%;display:inline-block;margin-right:0.5rem;vertical-align:middle}
+.charform details{margin-top:0.4rem}
+.charform summary{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;cursor:pointer;margin-bottom:0.6rem}
+
+.btn{font-family:'JetBrains Mono',monospace;font-size:12px;text-transform:uppercase;letter-spacing:0.06em;background:transparent;border:1px solid var(--amber);color:var(--amber);padding:0.65rem 1.3rem;border-radius:4px;cursor:pointer;transition:background 0.15s}
+.btn:hover{background:rgba(217,164,65,0.12)}
+.btn:disabled{opacity:0.4;cursor:default}
+.btn.secondary{border-color:var(--border);color:var(--muted)}
+.btn.secondary:hover{background:rgba(255,255,255,0.03)}
+
+.roster{display:grid;grid-template-columns:repeat(auto-fit, minmax(120px, 1fr));gap:0.75rem;margin-bottom:1.25rem}
+.card{background:var(--panel);border:1px solid var(--border);border-radius:6px;padding:0.9rem;text-align:center;transition:box-shadow 0.3s}
+.card.active{box-shadow:0 0 0 1px var(--card-color, var(--amber)), 0 0 18px -2px var(--card-color, var(--amber))}
+.card .dot{width:10px;height:10px;border-radius:50%;background:var(--card-color, var(--amber));margin:0 auto 0.5rem;opacity:0.5}
+.card.active .dot{opacity:1;animation:pulse 1s ease-in-out infinite}
+@keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.4)}}
+.card .name{font-family:'Cinzel',serif;font-size:14px;font-weight:500}
+.card .role{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--muted);text-transform:uppercase;margin-top:2px}
+.card .hp{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--parchment);margin-top:0.5rem}
+.card .hpbar{width:100%;height:4px;background:var(--panel-2);border-radius:2px;margin-top:3px;overflow:hidden}
+.card .hpbar-fill{height:100%;background:var(--card-color, var(--amber))}
+.card .inv{font-size:10px;color:var(--muted);margin-top:0.4rem;line-height:1.4}
+.card .status-badges{display:flex;flex-wrap:wrap;gap:3px;justify-content:center;margin-top:0.4rem}
+.card .status-badge{font-size:9px;font-family:'JetBrains Mono',monospace;background:var(--panel-2);border:1px solid var(--border);color:var(--amber);padding:1px 5px;border-radius:8px}
+.card .initiative-badge{position:absolute;top:6px;right:6px;font-family:'JetBrains Mono',monospace;font-size:10px;background:var(--amber);color:var(--bg);border-radius:50%;width:18px;height:18px;display:flex;align-items:center;justify-content:center;font-weight:600}
+.card{position:relative}
+
+.quest-item{display:flex;align-items:flex-start;gap:0.5rem;padding:0.3rem 0;font-size:14px}
+.quest-item.done{color:var(--muted);text-decoration:line-through}
+.quest-item .quest-dot{color:var(--amber);flex-shrink:0}
+
+.log{background:var(--panel);border:1px solid var(--border);border-radius:6px;padding:0.5rem 0;max-height:420px;overflow-y:auto;margin-bottom:1rem}
+.entry{padding:0.85rem 1.25rem;border-left:3px solid var(--entry-color, var(--muted))}
+.entry .speaker{font-family:'JetBrains Mono',monospace;font-size:11px;text-transform:uppercase;letter-spacing:0.05em;color:var(--entry-color, var(--muted));margin-bottom:0.3rem}
+.entry .text{font-size:15px;line-height:1.6}
+.entry.system .text{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--muted);font-style:normal}
+.entry .text .dice-success{color:#7BC47F;font-weight:600}
+.entry .text .dice-fail{color:#E0685E;font-weight:600}
+.entry .text .dialogue{color:#6FA8D9}
+
+.controls{display:flex;gap:0.75rem;align-items:center;flex-wrap:wrap}
+.status{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--muted);min-height:1.2em;margin-top:0.75rem}
+.status.error{color:var(--ember)}
+</style>
 </head>
 <body>
-    <div class="wrap">
+<div class="wrap">
 
-        <div class="header">
-            <div class="glow"></div>
-            <h1 id="sessionTitle">DnD AI</h1>
-            <div class="tagline" id="tagline">D&amp;D Session</div>
-            <div>
-                <a href="https://paypal.me/larsbirkenhauer1" target="_blank" rel="noopener" class="donate-link">☕ Diese Sitzung mit einer Spende unterstützen</a>
-            </div>
-        </div>
+  <div class="header">
+    <div class="glow"></div>
+    <h1 id="sessionTitle">Der Kryptenrat</h1>
+    <div class="tagline" id="tagline" data-i18n="tagline_default">D&amp;D Session</div>
+  </div>
 
-        <div class="panel" id="loadPanel">
-            <div class="field" style="margin-bottom:0.75rem">
-                <label for="loadFile">Gespeicherte Sitzung fortsetzen</label>
-                <input type="file" id="loadFile" accept="application/json">
-                <div class="hint">Lädt eine zuvor gespeicherte .json-Sitzungsdatei mit vollständigem Verlauf, Charakteren und Zustand. API Key unten trotzdem eintragen.</div>
-            </div>
-            <button class="btn" id="continueBtn" style="display:none">Geladene Sitzung fortsetzen</button>
-            <div class="hint" id="loadStatus"></div>
-        </div>
+  <div class="panel" id="langPanel">
+    <div class="field" style="margin-bottom:0.75rem">
+      <label data-i18n="lang_select_label">Sprache / Language / Idioma / Langue</label>
+    </div>
+    <div class="controls" id="langButtons">
+      <button type="button" class="btn lang-btn" data-lang="de">🇩🇪 Deutsch</button>
+      <button type="button" class="btn lang-btn" data-lang="en">🇬🇧 English</button>
+      <button type="button" class="btn lang-btn" data-lang="es">🇪🇸 Español</button>
+      <button type="button" class="btn lang-btn" data-lang="fr">🇫🇷 Français</button>
+    </div>
+  </div>
 
-        <div class="panel" id="setup">
-            <div class="field">
-                <label for="accessCode">Zugangscode</label>
-                <input type="password" id="accessCode" placeholder="Von dir erhaltener Zugangscode">
-                <div class="hint">Die KI-Anbindung läuft über den zentralen Server, kein eigener API Key nötig.</div>
-            </div>
-            <div class="field">
-                <label for="sessionName">Sitzungsname</label>
-                <input type="text" id="sessionName" placeholder="Dein session Name" value="">
-            </div>
-            <div class="field">
-                <label>Wer übernimmt den Erzähler?</label>
-                <div class="radiogroup" id="narratorModeGroup">
-                    <label class="checked"><input type="radio" name="narratorMode" value="user" checked> Ich selbst</label>
-                    <label><input type="radio" name="narratorMode" value="ai"> Die KI</label>
-                </div>
-                <div class="hint" id="narratorLockHint" style="display:none">Automatisch auf "Die KI" gesetzt, da mindestens ein Charakter menschlich gesteuert ist.</div>
-                <div class="hint">Du kannst jederzeit selbst als Erzähler einspringen, egal welcher Modus aktiv ist.</div>
-            </div>
-            <div class="field" id="narratorStyleField" style="display:none">
-                <label for="narratorStyle">Erzähler-KI – Stil &amp; Persönlichkeit</label>
-                <textarea id="narratorStyle" rows="3"></textarea>
-            </div>
-            <div class="field">
-                <label for="narratorDifficulty">Erzähler-Schwierigkeit</label>
-                <select id="narratorDifficulty">
-                    <option value="fair">Fair (großzügig)</option>
-                    <option value="balanced" selected>Ausgeglichen</option>
-                    <option value="strict">Streng</option>
-                    <option value="ruthless">Gnadenlos</option>
-                </select>
-                <div class="hint">Beeinflusst, wie oft gewürfelt werden muss und wie hoch die Schwierigkeitsgrade sind.</div>
-            </div>
-            <div class="field">
-                <label for="startScene">Startszene (dein Text als Erzähler)</label>
-                <textarea id="startScene"></textarea>
-                <div class="hint">Nenne den Namen eines Charakters darin, damit er direkt reagiert.</div>
-            </div>
-        </div>
+  <div class="panel" id="loadPanel" style="display:none">
+    <div class="field" style="margin-bottom:0.75rem">
+      <label for="loadFile" data-i18n="load_label">Gespeicherte Sitzung fortsetzen</label>
+      <input type="file" id="loadFile" accept="application/json">
+      <div class="hint" data-i18n="load_hint">Lädt eine zuvor gespeicherte .json-Sitzungsdatei mit vollständigem Verlauf, Charakteren und Zustand. API Key unten trotzdem eintragen.</div>
+    </div>
+    <button class="btn" id="continueBtn" style="display:none" data-i18n="continue_session_btn">Geladene Sitzung fortsetzen</button>
+    <div class="hint" id="loadStatus"></div>
+  </div>
 
-        <div class="panel" id="charEditor">
-            <div class="field" style="margin-bottom:1rem">
-                <label for="charCount">Anzahl Charaktere</label>
-                <input type="number" id="charCount" min="1" max="8" value="1" style="max-width:120px">
-            </div>
-            <div class="field" style="margin-bottom:1.25rem">
-                <label style="font-size:13px;color:var(--parchment)">Charaktere</label>
-            </div>
-            <div id="charForms"></div>
-            <button class="btn" id="startBtn" style="margin-top:0.5rem">Sitzung beginnen</button>
-        </div>
+  <div class="panel" id="setup" style="display:none">
+    <div class="field">
+      <label for="anthropicKey" data-i18n="api_key_label">Anthropic API Key</label>
+      <input type="password" id="anthropicKey" placeholder="sk-ant-...">
+      <div class="hint" data-i18n="api_key_hint">Nötig, damit die App eigenständig läuft (auch außerhalb dieses Chats).</div>
+    </div>
+    <div class="field">
+      <label for="sessionName" data-i18n="session_name_label">Sitzungsname</label>
+      <input type="text" id="sessionName" placeholder="z.B. Aschefall" value="Aschefall">
+    </div>
+    <div class="field">
+      <label data-i18n="narrator_who_label">Wer übernimmt den Erzähler?</label>
+      <div class="radiogroup" id="narratorModeGroup">
+        <label class="checked"><input type="radio" name="narratorMode" value="user" checked> <span data-i18n="narrator_who_user">Ich selbst</span></label>
+        <label><input type="radio" name="narratorMode" value="ai"> <span data-i18n="narrator_who_ai">Die KI</span></label>
+      </div>
+      <div class="hint" id="narratorLockHint" style="display:none" data-i18n="narrator_lock_hint">Automatisch auf "Die KI" gesetzt, da mindestens ein Charakter menschlich gesteuert ist.</div>
+      <div class="hint" data-i18n="narrator_jump_hint">Du kannst jederzeit selbst als Erzähler einspringen, egal welcher Modus aktiv ist.</div>
+    </div>
+    <div class="field" id="narratorStyleField" style="display:none">
+      <label for="narratorStyle" data-i18n="narrator_style_label">Erzähler-KI – Stil &amp; Persönlichkeit</label>
+      <textarea id="narratorStyle" rows="3" data-i18n="narrator_style_default">Du beschreibst Szenen humorvoll und lustig, aber immer knapp und auf den Punkt.</textarea>
+    </div>
+    <div class="field">
+      <label for="narratorDifficulty" data-i18n="difficulty_label">Erzähler-Schwierigkeit</label>
+      <select id="narratorDifficulty">
+        <option value="fair" data-i18n="difficulty_fair">Fair (großzügig)</option>
+        <option value="balanced" selected data-i18n="difficulty_balanced">Ausgeglichen</option>
+        <option value="strict" data-i18n="difficulty_strict">Streng</option>
+        <option value="ruthless" data-i18n="difficulty_ruthless">Gnadenlos</option>
+      </select>
+      <div class="hint" data-i18n="difficulty_hint">Beeinflusst, wie oft gewürfelt werden muss und wie hoch die Schwierigkeitsgrade sind.</div>
+    </div>
+    <div class="field">
+      <label for="startScene" data-i18n="start_scene_label">Startszene (dein Text als Erzähler)</label>
+      <textarea id="startScene" data-i18n="start_scene_default">Die Gruppe wacht in einer postapokalyptischen Welt auf.</textarea>
+      <div class="hint" data-i18n="start_scene_hint">Nenne den Namen eines Charakters darin, damit er direkt reagiert.</div>
+    </div>
+  </div>
 
-        <div id="session" style="display:none">
-            <div class="roster" id="roster"></div>
-            <div class="panel" id="questPanel" style="display:none;margin-bottom:1rem">
-                <label style="font-family:'JetBrains Mono',monospace;font-size:11px;text-transform:uppercase;letter-spacing:0.06em;color:var(--muted);display:block;margin-bottom:0.5rem">Ziele</label>
-                <div id="questList"></div>
-            </div>
-            <div class="log" id="log"></div>
+  <div class="panel" id="charEditor" style="display:none">
+    <div class="field" style="margin-bottom:1rem">
+      <label for="charCount" data-i18n="char_count_label">Anzahl Charaktere</label>
+      <input type="number" id="charCount" min="1" max="8" value="1" style="max-width:120px">
+    </div>
+    <div class="field" style="margin-bottom:1.25rem">
+      <label style="font-size:13px;color:var(--parchment)" data-i18n="characters_label">Charaktere</label>
+    </div>
+    <div id="charForms"></div>
+    <button class="btn" id="startBtn" style="margin-top:0.5rem" data-i18n="start_session_btn">Sitzung beginnen</button>
+  </div>
 
-            <div class="panel" id="humanCharBlock" style="display:none;margin-bottom:1rem">
-                <div class="field" style="margin-bottom:0.75rem">
-                    <label for="humanCharSelect">Als Charakter sprechen</label>
-                    <select id="humanCharSelect" style="margin-bottom:0.5rem"></select>
-                    <textarea id="humanCharInput" rows="2" placeholder="Was tut/sagt dein Charakter?"></textarea>
-                </div>
-                <div class="controls" style="margin-bottom:0.75rem">
-                    <button type="button" class="btn secondary quickActionBtn" data-text="Ich schaue mich um.">Umschauen</button>
-                    <button type="button" class="btn secondary quickActionBtn" data-text="Ich greife an.">Angreifen</button>
-                    <button type="button" class="btn secondary quickActionBtn" data-text="Ich durchsuche die Umgebung.">Durchsuchen</button>
-                    <button type="button" class="btn secondary quickActionBtn" data-text="Ich verstecke mich.">Verstecken</button>
-                </div>
-                <button class="btn" id="humanCharBtn">Sprechen</button>
-            </div>
+  <div id="session" style="display:none">
+    <div class="roster" id="roster"></div>
+    <div class="panel" id="questPanel" style="display:none;margin-bottom:1rem">
+      <label style="font-family:'JetBrains Mono',monospace;font-size:11px;text-transform:uppercase;letter-spacing:0.06em;color:var(--muted);display:block;margin-bottom:0.5rem" data-i18n="quests_label">Ziele</label>
+      <div id="questList"></div>
+    </div>
+    <div class="log" id="log"></div>
 
-            <div class="panel" id="userNarrationBlock" style="margin-bottom:1rem">
-                <div class="field" style="margin-bottom:0.75rem">
-                    <label for="narrationInput">Du als Erzähler – eigenen Text einfügen</label>
-                    <textarea id="narrationInput" rows="2" placeholder="z.B. Detlef, was tust du? / Ein Ghul bricht durch die Wand."></textarea>
-                    <div class="hint">Nenne einen Charakternamen, damit er reagiert.</div>
-                </div>
-                <button class="btn" id="narrateBtn">Erzählen</button>
-            </div>
-            <div class="panel" id="aiNarrationBlock" style="display:none;margin-bottom:1rem">
-                <div class="hint" style="margin-bottom:0.75rem">Die KI führt die Erzählung automatisch fort, bis ein menschlicher Spieler gefragt ist.</div>
-                <label style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.75rem;font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--muted);cursor:pointer">
-                    <input type="checkbox" id="autoNarrateToggle" checked style="width:auto">
-                    Automatisch weitererzählen
-                </label>
-                <button class="btn" id="aiNarrateBtn">KI erzählt weiter</button>
-            </div>
-            <div class="panel" id="toolsBlock" style="margin-bottom:1rem">
-                <label style="font-family:'JetBrains Mono',monospace;font-size:11px;text-transform:uppercase;letter-spacing:0.06em;color:var(--muted);display:block;margin-bottom:0.6rem">Werkzeuge</label>
-                <div class="controls" style="margin-bottom:0.6rem">
-                    <button type="button" class="btn secondary" id="initiativeBtn">Initiative auswürfeln</button>
-                    <button type="button" class="btn secondary" id="clearInitiativeBtn">Initiative beenden</button>
-                </div>
-                <div class="controls" style="margin-bottom:0.6rem">
-                    <select id="manualDiceType" style="width:auto;padding:0.5rem 0.75rem">
-                        <option value="4">W4</option>
-                        <option value="6">W6</option>
-                        <option value="8">W8</option>
-                        <option value="10">W10</option>
-                        <option value="12">W12</option>
-                        <option value="20" selected>W20</option>
-                        <option value="100">W100</option>
-                    </select>
-                    <button type="button" class="btn secondary" id="manualDiceBtn">Würfeln</button>
-                </div>
-                <div class="controls">
-                    <button type="button" class="btn secondary" id="summarizeBtn">Verlauf zusammenfassen</button>
-                    <button type="button" class="btn secondary" id="statsBtn">Statistik anzeigen</button>
-                </div>
-            </div>
-
-            <div class="controls">
-                <button class="btn secondary" id="saveSessionBtn">Sitzung speichern (fortsetzbar)</button>
-                <button class="btn secondary" id="saveBtn">Verlauf als Text exportieren</button>
-                <button class="btn secondary" id="resetBtn">Neue Sitzung</button>
-            </div>
-            <div class="status" id="status"></div>
-        </div>
-
+    <div class="panel" id="humanCharBlock" style="display:none;margin-bottom:1rem">
+      <div class="field" style="margin-bottom:0.75rem">
+        <label for="humanCharSelect" data-i18n="speak_as_char_label">Als Charakter sprechen</label>
+        <select id="humanCharSelect" style="margin-bottom:0.5rem"></select>
+        <textarea id="humanCharInput" rows="2" data-i18n-placeholder="char_input_placeholder" placeholder="Was tut/sagt dein Charakter?"></textarea>
+      </div>
+      <div class="controls" style="margin-bottom:0.75rem">
+        <button type="button" class="btn secondary quickActionBtn" data-text-i18n="quick_lookaround" data-text="Ich schaue mich um." data-i18n="quick_lookaround_btn">Umschauen</button>
+        <button type="button" class="btn secondary quickActionBtn" data-text-i18n="quick_attack" data-text="Ich greife an." data-i18n="quick_attack_btn">Angreifen</button>
+        <button type="button" class="btn secondary quickActionBtn" data-text-i18n="quick_search" data-text="Ich durchsuche die Umgebung." data-i18n="quick_search_btn">Durchsuchen</button>
+        <button type="button" class="btn secondary quickActionBtn" data-text-i18n="quick_hide" data-text="Ich verstecke mich." data-i18n="quick_hide_btn">Verstecken</button>
+      </div>
+      <button class="btn" id="humanCharBtn" data-i18n="speak_btn">Sprechen</button>
     </div>
 
-    <script>
-        const COLOR_PALETTE = ["var(--grom)", "var(--lyra)", "#8AA4C4", "#C48A6A", "#9A7BC4", "#6AC4A0", "#C46A9A", "#B5A56A"];
-        const DEFAULT_CHAR_SLOTS = [
-            { color: "var(--grom)", name: "", species: "mensch", speciesDetail: "", creatureDesc: "", bio: "", quirk: "", secret: "", isHuman: false },
-        ];
-        const NARRATOR_COLOR = "var(--erz)";
-        const START_HP = 10;
+    <div class="panel" id="userNarrationBlock" style="margin-bottom:1rem">
+      <div class="field" style="margin-bottom:0.75rem">
+        <label for="narrationInput" data-i18n="narration_input_label">Du als Erzähler – eigenen Text einfügen</label>
+        <textarea id="narrationInput" rows="2" data-i18n-placeholder="narration_input_placeholder" placeholder="z.B. Detlef, was tust du? / Ein Ghul bricht durch die Wand."></textarea>
+        <div class="hint" data-i18n="narration_input_hint">Nenne einen Charakternamen, damit er reagiert.</div>
+      </div>
+      <button class="btn" id="narrateBtn" data-i18n="narrate_btn">Erzählen</button>
+    </div>
+    <div class="panel" id="aiNarrationBlock" style="display:none;margin-bottom:1rem">
+      <div class="hint" style="margin-bottom:0.75rem" data-i18n="ai_narration_hint">Die KI führt die Erzählung automatisch fort, bis ein menschlicher Spieler gefragt ist.</div>
+      <label style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.75rem;font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--muted);cursor:pointer">
+        <input type="checkbox" id="autoNarrateToggle" checked style="width:auto">
+        <span data-i18n="auto_narrate_toggle">Automatisch weitererzählen</span>
+      </label>
+      <button class="btn" id="aiNarrateBtn" data-i18n="ai_narrate_btn">KI erzählt weiter</button>
+    </div>
+    <div class="panel" id="toolsBlock" style="margin-bottom:1rem">
+      <label style="font-family:'JetBrains Mono',monospace;font-size:11px;text-transform:uppercase;letter-spacing:0.06em;color:var(--muted);display:block;margin-bottom:0.6rem" data-i18n="tools_label">Werkzeuge</label>
+      <div class="controls" style="margin-bottom:0.6rem">
+        <button type="button" class="btn secondary" id="initiativeBtn" data-i18n="initiative_btn">Initiative auswürfeln</button>
+        <button type="button" class="btn secondary" id="clearInitiativeBtn" data-i18n="clear_initiative_btn">Initiative beenden</button>
+      </div>
+      <div class="controls" style="margin-bottom:0.6rem">
+        <select id="manualDiceType" style="width:auto;padding:0.5rem 0.75rem">
+          <option value="4">W4</option>
+          <option value="6">W6</option>
+          <option value="8">W8</option>
+          <option value="10">W10</option>
+          <option value="12">W12</option>
+          <option value="20" selected>W20</option>
+          <option value="100">W100</option>
+        </select>
+        <button type="button" class="btn secondary" id="manualDiceBtn" data-i18n="roll_btn">Würfeln</button>
+      </div>
+      <div class="controls">
+        <button type="button" class="btn secondary" id="summarizeBtn" data-i18n="summarize_btn">Verlauf zusammenfassen</button>
+        <button type="button" class="btn secondary" id="statsBtn" data-i18n="stats_btn">Statistik anzeigen</button>
+      </div>
+    </div>
 
-        const DIFFICULTY_TEXT = {
-            fair: "Du bist als Spielleiter großzügig: du lässt viele Aktionen ohne Wurf durchgehen und setzt niedrige Schwierigkeitsgrade an (SG 8-11), wenn doch gewürfelt wird.",
-            balanced: "Du bist als Spielleiter ausgeglichen: du forderst bei unsicheren oder riskanten Aktionen einen Wurf mit realistischer Schwierigkeit (SG 11-14).",
-            strict: "Du bist als Spielleiter streng: du forderst häufig Würfe, auch bei mittelschweren Aktionen, mit höheren Schwierigkeitsgraden (SG 14-17).",
-            ruthless: "Du bist als Spielleiter gnadenlos: du forderst bei fast jeder unsicheren Aktion einen Wurf mit hohen Schwierigkeitsgraden (SG 16-20) und lässt Konsequenzen bei Misserfolg spürbar hart ausfallen."
-        };
+    <div class="controls">
+      <button class="btn secondary" id="saveSessionBtn" data-i18n="save_session_btn">Sitzung speichern (fortsetzbar)</button>
+      <button class="btn secondary" id="saveBtn" data-i18n="export_text_btn">Verlauf als Text exportieren</button>
+      <button class="btn secondary" id="resetBtn" data-i18n="new_session_btn">Neue Sitzung</button>
+    </div>
+    <div class="status" id="status"></div>
+  </div>
 
-        function sanitizeKey(raw) {
-            let s = raw.trim();
-            s = s.replace(/[\u2010-\u2015\u2212]/g, '-');
-            s = s.replace(/[\u2018\u2019\u201A\u201B]/g, "'");
-            s = s.replace(/[\u201C\u201D\u201E\u201F]/g, '"');
-            s = s.replace(/[^\x00-\xFF]/g, '');
-            return s;
-        }
+</div>
 
-        let AGENTS = {};
-        let CHAR_NAMES = [];
-        let characterSpecies = {};
-        let accessCode = "";
-        let charFormValues = DEFAULT_CHAR_SLOTS.map(c => ({ ...c }));
-        let currentCharCount = 1;
-        let narratorMode = "user";
-        let narratorSystemPrompt = "";
-        let storyLog = [];
-        let characterState = {};
-        let questLog = [];
-        let initiativeOrder = [];
-        let sessionStats = { rolls: 0, critSuccess: 0, critFail: 0, success: 0, fail: 0, itemsFound: 0 };
-        let sessionNameGlobal = "";
+<script>
+const LANG_NAMES = { de: "Deutsch", en: "English", es: "Español", fr: "Français" };
+let uiLang = "de";
 
-        const charFormsEl = document.getElementById('charForms');
-        const rosterEl = document.getElementById('roster');
-        const logEl = document.getElementById('log');
-        const statusEl = document.getElementById('status');
+const DICE_WORDS = {
+  de: { prefix: "Wurf", success: "Erfolg", fail: "Fehlschlag", critSuccess: "kritischer Erfolg", critFail: "kritischer Fehlschlag" },
+  en: { prefix: "Roll", success: "Success", fail: "Failure", critSuccess: "critical Success", critFail: "critical Failure" },
+  es: { prefix: "Tirada", success: "Éxito", fail: "Fallo", critSuccess: "Éxito crítico", critFail: "Fallo crítico" },
+  fr: { prefix: "Jet", success: "Réussite", fail: "Échec", critSuccess: "Réussite critique", critFail: "Échec critique" }
+};
 
-        document.querySelectorAll('input[name="narratorMode"]').forEach(radio => {
-            radio.addEventListener('change', (e) => {
-                if (e.target.disabled) return;
-                narratorMode = e.target.value;
-                document.querySelectorAll('#narratorModeGroup label').forEach(l => l.classList.remove('checked'));
-                e.target.closest('label').classList.add('checked');
-                document.getElementById('narratorStyleField').style.display = narratorMode === 'ai' ? 'block' : 'none';
-            });
-        });
+const TRANSLATIONS = {
+  lang_select_label: { de: "Sprache / Language / Idioma / Langue", en: "Sprache / Language / Idioma / Langue", es: "Sprache / Language / Idioma / Langue", fr: "Sprache / Language / Idioma / Langue" },
+  load_label: { de: "Gespeicherte Sitzung fortsetzen", en: "Resume saved session", es: "Continuar sesión guardada", fr: "Reprendre une session sauvegardée" },
+  load_hint: { de: "Lädt eine zuvor gespeicherte .json-Sitzungsdatei mit vollständigem Verlauf, Charakteren und Zustand. API Key unten trotzdem eintragen.", en: "Loads a previously saved .json session file with full history, characters and state. Still enter your API key below.", es: "Carga un archivo de sesión .json guardado previamente con historial completo, personajes y estado. Introduce igualmente tu clave API abajo.", fr: "Charge un fichier de session .json précédemment sauvegardé avec l'historique complet, les personnages et l'état. Saisis quand même ta clé API ci-dessous." },
+  continue_session_btn: { de: "Geladene Sitzung fortsetzen", en: "Continue loaded session", es: "Continuar sesión cargada", fr: "Continuer la session chargée" },
+  api_key_label: { de: "Anthropic API Key", en: "Anthropic API Key", es: "Clave API de Anthropic", fr: "Clé API Anthropic" },
+  api_key_hint: { de: "Nötig, damit die App eigenständig läuft (auch außerhalb dieses Chats).", en: "Needed so the app runs independently (also outside this chat).", es: "Necesaria para que la app funcione de forma independiente (también fuera de este chat).", fr: "Nécessaire pour que l'appli fonctionne de façon autonome (aussi en dehors de ce chat)." },
+  session_name_label: { de: "Sitzungsname", en: "Session name", es: "Nombre de la sesión", fr: "Nom de la session" },
+  narrator_who_label: { de: "Wer übernimmt den Erzähler?", en: "Who plays the narrator?", es: "¿Quién hace de narrador?", fr: "Qui joue le narrateur ?" },
+  narrator_who_user: { de: "Ich selbst", en: "Myself", es: "Yo mismo", fr: "Moi-même" },
+  narrator_who_ai: { de: "Die KI", en: "The AI", es: "La IA", fr: "L'IA" },
+  narrator_lock_hint: { de: 'Automatisch auf "Die KI" gesetzt, da mindestens ein Charakter menschlich gesteuert ist.', en: 'Automatically set to "The AI" because at least one character is human-controlled.', es: 'Se establece automáticamente en "La IA" porque al menos un personaje es controlado por un humano.', fr: 'Réglé automatiquement sur "L\'IA" car au moins un personnage est contrôlé par un humain.' },
+  narrator_jump_hint: { de: "Du kannst jederzeit selbst als Erzähler einspringen, egal welcher Modus aktiv ist.", en: "You can jump in as narrator yourself at any time, regardless of the active mode.", es: "Puedes intervenir como narrador en cualquier momento, sin importar el modo activo.", fr: "Tu peux intervenir comme narrateur à tout moment, quel que soit le mode actif." },
+  narrator_style_label: { de: "Erzähler-KI – Stil & Persönlichkeit", en: "Narrator AI – style & personality", es: "IA narradora – estilo y personalidad", fr: "IA narratrice – style et personnalité" },
+  narrator_style_default: { de: "Du beschreibst Szenen humorvoll und lustig, aber immer knapp und auf den Punkt.", en: "You describe scenes humorously and fun, but always brief and to the point.", es: "Describes las escenas con humor y diversión, pero siempre de forma breve y concisa.", fr: "Tu décris les scènes avec humour, mais toujours de façon brève et précise." },
+  difficulty_label: { de: "Erzähler-Schwierigkeit", en: "Narrator difficulty", es: "Dificultad del narrador", fr: "Difficulté du narrateur" },
+  difficulty_fair: { de: "Fair (großzügig)", en: "Fair (lenient)", es: "Justo (indulgente)", fr: "Juste (indulgent)" },
+  difficulty_balanced: { de: "Ausgeglichen", en: "Balanced", es: "Equilibrado", fr: "Équilibré" },
+  difficulty_strict: { de: "Streng", en: "Strict", es: "Estricto", fr: "Strict" },
+  difficulty_ruthless: { de: "Gnadenlos", en: "Ruthless", es: "Despiadado", fr: "Impitoyable" },
+  difficulty_hint: { de: "Beeinflusst, wie oft gewürfelt werden muss und wie hoch die Schwierigkeitsgrade sind.", en: "Affects how often rolls are needed and how high difficulty levels are.", es: "Afecta la frecuencia de las tiradas y el nivel de dificultad.", fr: "Influence la fréquence des jets et le niveau de difficulté." },
+  start_scene_label: { de: "Startszene (dein Text als Erzähler)", en: "Opening scene (your text as narrator)", es: "Escena inicial (tu texto como narrador)", fr: "Scène d'ouverture (ton texte en tant que narrateur)" },
+  start_scene_default: { de: "Die Gruppe wacht in einer postapokalyptischen Welt auf.", en: "The group wakes up in a post-apocalyptic world.", es: "El grupo despierta en un mundo postapocalíptico.", fr: "Le groupe se réveille dans un monde post-apocalyptique." },
+  start_scene_hint: { de: "Nenne den Namen eines Charakters darin, damit er direkt reagiert.", en: "Mention a character's name in it so they react directly.", es: "Menciona el nombre de un personaje para que reaccione directamente.", fr: "Mentionne le nom d'un personnage pour qu'il réagisse directement." },
+  char_count_label: { de: "Anzahl Charaktere", en: "Number of characters", es: "Número de personajes", fr: "Nombre de personnages" },
+  characters_label: { de: "Charaktere", en: "Characters", es: "Personajes", fr: "Personnages" },
+  start_session_btn: { de: "Sitzung beginnen", en: "Start session", es: "Iniciar sesión", fr: "Démarrer la session" },
+  quests_label: { de: "Ziele", en: "Goals", es: "Objetivos", fr: "Objectifs" },
+  speak_as_char_label: { de: "Als Charakter sprechen", en: "Speak as character", es: "Hablar como personaje", fr: "Parler en tant que personnage" },
+  char_input_placeholder: { de: "Was tut/sagt dein Charakter?", en: "What does your character do/say?", es: "¿Qué hace/dice tu personaje?", fr: "Que fait/dit ton personnage ?" },
+  quick_lookaround_btn: { de: "Umschauen", en: "Look around", es: "Mirar alrededor", fr: "Regarder autour" },
+  quick_lookaround: { de: "Ich schaue mich um.", en: "I look around.", es: "Miro alrededor.", fr: "Je regarde autour de moi." },
+  quick_attack_btn: { de: "Angreifen", en: "Attack", es: "Atacar", fr: "Attaquer" },
+  quick_attack: { de: "Ich greife an.", en: "I attack.", es: "Ataco.", fr: "J'attaque." },
+  quick_search_btn: { de: "Durchsuchen", en: "Search", es: "Registrar", fr: "Fouiller" },
+  quick_search: { de: "Ich durchsuche die Umgebung.", en: "I search the area.", es: "Registro la zona.", fr: "Je fouille les environs." },
+  quick_hide_btn: { de: "Verstecken", en: "Hide", es: "Esconderse", fr: "Se cacher" },
+  quick_hide: { de: "Ich verstecke mich.", en: "I hide.", es: "Me escondo.", fr: "Je me cache." },
+  speak_btn: { de: "Sprechen", en: "Speak", es: "Hablar", fr: "Parler" },
+  narration_input_label: { de: "Du als Erzähler – eigenen Text einfügen", en: "You as narrator – add your own text", es: "Tú como narrador – añade tu propio texto", fr: "Toi en tant que narrateur – ajoute ton propre texte" },
+  narration_input_placeholder: { de: "z.B. Detlef, was tust du? / Ein Ghul bricht durch die Wand.", en: "e.g. Detlef, what do you do? / A ghoul bursts through the wall.", es: "p.ej. Detlef, ¿qué haces? / Un ghoul irrumpe por la pared.", fr: "ex. Detlef, que fais-tu ? / Une goule surgit à travers le mur." },
+  narration_input_hint: { de: "Nenne einen Charakternamen, damit er reagiert.", en: "Mention a character's name so they react.", es: "Menciona el nombre de un personaje para que reaccione.", fr: "Mentionne le nom d'un personnage pour qu'il réagisse." },
+  narrate_btn: { de: "Erzählen", en: "Narrate", es: "Narrar", fr: "Narrer" },
+  ai_narration_hint: { de: "Die KI führt die Erzählung automatisch fort, bis ein menschlicher Spieler gefragt ist.", en: "The AI continues the narration automatically until a human player is asked something.", es: "La IA continúa la narración automáticamente hasta que se pregunta a un jugador humano.", fr: "L'IA poursuit la narration automatiquement jusqu'à ce qu'un joueur humain soit sollicité." },
+  auto_narrate_toggle: { de: "Automatisch weitererzählen", en: "Auto-continue narration", es: "Continuar narración automáticamente", fr: "Poursuivre la narration automatiquement" },
+  ai_narrate_btn: { de: "KI erzählt weiter", en: "AI continues", es: "La IA continúa", fr: "L'IA continue" },
+  tools_label: { de: "Werkzeuge", en: "Tools", es: "Herramientas", fr: "Outils" },
+  initiative_btn: { de: "Initiative auswürfeln", en: "Roll initiative", es: "Tirar iniciativa", fr: "Lancer l'initiative" },
+  clear_initiative_btn: { de: "Initiative beenden", en: "End initiative", es: "Terminar iniciativa", fr: "Terminer l'initiative" },
+  roll_btn: { de: "Würfeln", en: "Roll", es: "Tirar", fr: "Lancer" },
+  summarize_btn: { de: "Verlauf zusammenfassen", en: "Summarize history", es: "Resumir historial", fr: "Résumer l'historique" },
+  stats_btn: { de: "Statistik anzeigen", en: "Show statistics", es: "Mostrar estadísticas", fr: "Afficher les statistiques" },
+  save_session_btn: { de: "Sitzung speichern (fortsetzbar)", en: "Save session (resumable)", es: "Guardar sesión (reanudable)", fr: "Sauvegarder la session (reprenable)" },
+  export_text_btn: { de: "Verlauf als Text exportieren", en: "Export history as text", es: "Exportar historial como texto", fr: "Exporter l'historique en texte" },
+  new_session_btn: { de: "Neue Sitzung", en: "New session", es: "Nueva sesión", fr: "Nouvelle session" },
+  tagline_default: { de: "D&D Session", en: "D&D Session", es: "Sesión de D&D", fr: "Session D&D" },
+  char_label: { de: "Charakter", en: "Character", es: "Personaje", fr: "Personnage" },
+  name_label: { de: "Name", en: "Name", es: "Nombre", fr: "Nom" },
+  species_label: { de: "Art", en: "Species", es: "Especie", fr: "Espèce" },
+  species_human: { de: "Mensch", en: "Human", es: "Humano", fr: "Humain" },
+  species_animal: { de: "Tier", en: "Animal", es: "Animal", fr: "Animal" },
+  species_other: { de: "Andere Kreatur", en: "Other creature", es: "Otra criatura", fr: "Autre créature" },
+  controlled_by_label: { de: "Gesteuert von", en: "Controlled by", es: "Controlado por", fr: "Contrôlé par" },
+  controlled_ai: { de: "KI", en: "AI", es: "IA", fr: "IA" },
+  controlled_human: { de: "Mensch (ich/Mitspieler)", en: "Human (me/fellow player)", es: "Humano (yo/otro jugador)", fr: "Humain (moi/autre joueur)" },
+  str_label: { de: "Stärke (1-5)", en: "Strength (1-5)", es: "Fuerza (1-5)", fr: "Force (1-5)" },
+  dex_label: { de: "Geschick (1-5)", en: "Dexterity (1-5)", es: "Destreza (1-5)", fr: "Dextérité (1-5)" },
+  cha_label: { de: "Charisma (1-5)", en: "Charisma (1-5)", es: "Carisma (1-5)", fr: "Charisme (1-5)" },
+  bio_label: { de: "Kurzbiografie", en: "Short bio", es: "Biografía breve", fr: "Courte biographie" },
+  ai_generate_btn: { de: "KI generieren", en: "AI generate", es: "Generar con IA", fr: "Générer par IA" },
+  advanced_summary: { de: "Erweitert: Sprachmuster & geheimes Ziel (optional)", en: "Advanced: speech pattern & secret goal (optional)", es: "Avanzado: patrón de habla y objetivo secreto (opcional)", fr: "Avancé : particularité de langage et objectif secret (facultatif)" },
+  quirk_label: { de: "Sprachmuster / Eigenart", en: "Speech pattern / quirk", es: "Patrón de habla / peculiaridad", fr: "Particularité de langage" },
+  quirk_placeholder: { de: "z.B. nuschelt, flucht viel", en: "e.g. mumbles, curses a lot", es: "p.ej. habla entre dientes, maldice mucho", fr: "ex. marmonne, jure beaucoup" },
+  secret_label: { de: "Geheimes Ziel / Beziehung zu anderen", en: "Secret goal / relationship to others", es: "Objetivo secreto / relación con otros", fr: "Objectif secret / relation aux autres" },
+  secret_placeholder: { de: "z.B. misstraut Hubert insgeheim", en: "e.g. secretly distrusts Hubert", es: "p.ej. desconfía en secreto de Hubert", fr: "ex. se méfie secrètement de Hubert" },
+  species_detail_label: { de: "Genauer (optional)", en: "More specific (optional)", es: "Más detalle (opcional)", fr: "Plus précis (facultatif)" },
+  creature_desc_label: { de: "Wesensart (was für eine Kreatur?)", en: "Nature (what kind of creature?)", es: "Naturaleza (¿qué tipo de criatura?)", fr: "Nature (quel genre de créature ?)" },
+  creature_invent_btn: { de: "KI erfinden", en: "AI invent", es: "Inventar con IA", fr: "Inventer par IA" },
+  creature_hint: { de: "Wird einmal festgelegt und danach die ganze Sitzung über beibehalten.", en: "Set once and kept for the entire session afterwards.", es: "Se define una vez y se mantiene durante toda la sesión.", fr: "Défini une fois et conservé pendant toute la session." }
+};
 
-        function anyHumanCharacter() {
-            for (let i = 0; i < currentCharCount; i++) {
-                const el = document.getElementById(`char${i}_human`);
-                if (el && el.value === 'human') return true;
-            }
-            return false;
-        }
+function t(key){
+  const entry = TRANSLATIONS[key];
+  if(!entry) return key;
+  return entry[uiLang] || entry.de || key;
+}
 
-        function updateNarratorLock() {
-            const anyHuman = anyHumanCharacter();
-            const radios = document.querySelectorAll('input[name="narratorMode"]');
-            const lockHint = document.getElementById('narratorLockHint');
-            if (anyHuman) {
-                radios.forEach(r => { r.disabled = true; });
-                const aiRadio = document.querySelector('input[name="narratorMode"][value="ai"]');
-                aiRadio.checked = true;
-                narratorMode = 'ai';
-                document.querySelectorAll('#narratorModeGroup label').forEach(l => l.classList.remove('checked'));
-                aiRadio.closest('label').classList.add('checked');
-                document.getElementById('narratorStyleField').style.display = 'block';
-                lockHint.style.display = 'block';
-            } else {
-                radios.forEach(r => { r.disabled = false; });
-                lockHint.style.display = 'none';
-            }
-        }
+function applyTranslations(){
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const key = el.getAttribute('data-i18n');
+    const text = t(key);
+    if(el.tagName === 'TEXTAREA'){
+      if(!el.dataset.userEdited) el.value = text;
+    } else {
+      el.textContent = text;
+    }
+  });
+  document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+    el.setAttribute('placeholder', t(el.getAttribute('data-i18n-placeholder')));
+  });
+  document.querySelectorAll('[data-text-i18n]').forEach(el => {
+    el.setAttribute('data-text', t(el.getAttribute('data-text-i18n')));
+  });
+  document.documentElement.lang = uiLang;
+}
 
-        function getCharValue(i) {
-            if (charFormValues[i]) return charFormValues[i];
-            return { color: COLOR_PALETTE[i % COLOR_PALETTE.length], name: `Charakter ${i + 1}`, species: "mensch", speciesDetail: "", creatureDesc: "", bio: "", quirk: "", secret: "", isHuman: false, str: 3, dex: 3, cha: 3 };
-        }
+document.querySelectorAll('.lang-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    uiLang = btn.dataset.lang;
+    applyTranslations();
+    renderCharForms(currentCharCount);
+    document.getElementById('langPanel').style.display = 'none';
+    document.getElementById('loadPanel').style.display = 'block';
+    document.getElementById('setup').style.display = 'block';
+    document.getElementById('charEditor').style.display = 'block';
+  });
+});
 
-        function captureCharFormValues(count) {
-            for (let i = 0; i < count; i++) {
-                const nameEl = document.getElementById(`char${i}_name`);
-                if (!nameEl) continue;
-                charFormValues[i] = {
-                    name: nameEl.value.trim(),
-                    species: document.getElementById(`char${i}_species`).value,
-                    speciesDetail: document.getElementById(`char${i}_speciesDetail`) ? document.getElementById(`char${i}_speciesDetail`).value.trim() : "",
-                    creatureDesc: document.getElementById(`char${i}_creatureDesc`) ? document.getElementById(`char${i}_creatureDesc`).value.trim() : "",
-                    bio: document.getElementById(`char${i}_bio`).value.trim(),
-                    quirk: document.getElementById(`char${i}_quirk`).value.trim(),
-                    secret: document.getElementById(`char${i}_secret`).value.trim(),
-                    isHuman: document.getElementById(`char${i}_human`).value === 'human',
-                    str: parseInt(document.getElementById(`char${i}_str`).value, 10) || 3,
-                    dex: parseInt(document.getElementById(`char${i}_dex`).value, 10) || 3,
-                    cha: parseInt(document.getElementById(`char${i}_cha`).value, 10) || 3,
-                    color: getCharValue(i).color
-                };
-            }
-        }
+const COLOR_PALETTE = ["var(--grom)", "var(--lyra)", "#8AA4C4", "#C48A6A", "#9A7BC4", "#6AC4A0", "#C46A9A", "#B5A56A"];
+const DEFAULT_CHAR_SLOTS = [
+  { color: "var(--grom)", name: "Detlef", species: "mensch", speciesDetail: "", creatureDesc: "", bio: "Hoffnungslos.", quirk: "", secret: "", isHuman: false },
+  { color: "var(--lyra)", name: "Jessica", species: "mensch", speciesDetail: "", creatureDesc: "", bio: "Elegant, gehoben, eitel, sentimental.", quirk: "", secret: "", isHuman: false },
+  { color: "#8AA4C4", name: "Hubert", species: "mensch", speciesDetail: "", creatureDesc: "", bio: "Humorvoll, lustig, albern.", quirk: "", secret: "", isHuman: false }
+];
+const NARRATOR_COLOR = "var(--erz)";
+const START_HP = 10;
 
-        function speciesExtraFieldHTML(c, i) {
-            if (c.species === 'andere') {
-                return `
-          <div class="field" id="char${i}_speciesDetailWrap">
-            <label>Wesensart (was für eine Kreatur?)</label>
-            <div style="display:flex;gap:0.5rem">
-              <input type="text" id="char${i}_creatureDesc" value="${c.creatureDesc || ''}" placeholder="z.B. schimmernder Nebelgeist mit Rabenstimme" style="flex:1">
-              <button type="button" class="btn secondary charGenBtn" data-action="creature" data-idx="${i}" style="white-space:nowrap">KI erfinden</button>
-            </div>
-            <div class="hint">Wird einmal festgelegt und danach die ganze Sitzung über beibehalten.</div>
-          </div>
-        `;
-            }
-            return `
-        <div class="field" id="char${i}_speciesDetailWrap">
-          <label>Genauer (optional)</label>
-          <input type="text" id="char${i}_speciesDetail" value="${c.speciesDetail || ''}" placeholder="${c.species === 'tier' ? 'z.B. Rabe, Hund' : 'z.B. ehemaliger Söldner'}">
+const DIFFICULTY_TEXT = {
+  fair: "Du bist als Spielleiter großzügig: du lässt viele Aktionen ohne Wurf durchgehen und setzt niedrige Schwierigkeitsgrade an (SG 8-11), wenn doch gewürfelt wird.",
+  balanced: "Du bist als Spielleiter ausgeglichen: du forderst bei unsicheren oder riskanten Aktionen einen Wurf mit realistischer Schwierigkeit (SG 11-14).",
+  strict: "Du bist als Spielleiter streng: du forderst häufig Würfe, auch bei mittelschweren Aktionen, mit höheren Schwierigkeitsgraden (SG 14-17).",
+  ruthless: "Du bist als Spielleiter gnadenlos: du forderst bei fast jeder unsicheren Aktion einen Wurf mit hohen Schwierigkeitsgraden (SG 16-20) und lässt Konsequenzen bei Misserfolg spürbar hart ausfallen."
+};
+
+function sanitizeKey(raw){
+  let s = raw.trim();
+  s = s.replace(/[\u2010-\u2015\u2212]/g, '-');
+  s = s.replace(/[\u2018\u2019\u201A\u201B]/g, "'");
+  s = s.replace(/[\u201C\u201D\u201E\u201F]/g, '"');
+  s = s.replace(/[^\x00-\xFF]/g, '');
+  return s;
+}
+
+let AGENTS = {};
+let CHAR_NAMES = [];
+let characterSpecies = {};
+let anthropicKey = "";
+let charFormValues = DEFAULT_CHAR_SLOTS.map(c => ({...c}));
+let currentCharCount = 1;
+let narratorMode = "user";
+let narratorSystemPrompt = "";
+let storyLog = [];
+let characterState = {};
+let questLog = [];
+let initiativeOrder = [];
+let sessionStats = { rolls: 0, critSuccess: 0, critFail: 0, success: 0, fail: 0, itemsFound: 0 };
+let sessionNameGlobal = "";
+
+const charFormsEl = document.getElementById('charForms');
+const rosterEl = document.getElementById('roster');
+const logEl = document.getElementById('log');
+const statusEl = document.getElementById('status');
+
+document.querySelectorAll('input[name="narratorMode"]').forEach(radio => {
+  radio.addEventListener('change', (e) => {
+    if(e.target.disabled) return;
+    narratorMode = e.target.value;
+    document.querySelectorAll('#narratorModeGroup label').forEach(l => l.classList.remove('checked'));
+    e.target.closest('label').classList.add('checked');
+    document.getElementById('narratorStyleField').style.display = narratorMode === 'ai' ? 'block' : 'none';
+  });
+});
+
+function anyHumanCharacter(){
+  for(let i = 0; i < currentCharCount; i++){
+    const el = document.getElementById(`char${i}_human`);
+    if(el && el.value === 'human') return true;
+  }
+  return false;
+}
+
+function updateNarratorLock(){
+  const anyHuman = anyHumanCharacter();
+  const radios = document.querySelectorAll('input[name="narratorMode"]');
+  const lockHint = document.getElementById('narratorLockHint');
+  if(anyHuman){
+    radios.forEach(r => { r.disabled = true; });
+    const aiRadio = document.querySelector('input[name="narratorMode"][value="ai"]');
+    aiRadio.checked = true;
+    narratorMode = 'ai';
+    document.querySelectorAll('#narratorModeGroup label').forEach(l => l.classList.remove('checked'));
+    aiRadio.closest('label').classList.add('checked');
+    document.getElementById('narratorStyleField').style.display = 'block';
+    lockHint.style.display = 'block';
+  } else {
+    radios.forEach(r => { r.disabled = false; });
+    lockHint.style.display = 'none';
+  }
+}
+
+function getCharValue(i){
+  if(charFormValues[i]) return charFormValues[i];
+  return { color: COLOR_PALETTE[i % COLOR_PALETTE.length], name: `Charakter ${i+1}`, species: "mensch", speciesDetail: "", creatureDesc: "", bio: "", quirk: "", secret: "", isHuman: false, str: 3, dex: 3, cha: 3 };
+}
+
+function captureCharFormValues(count){
+  for(let i = 0; i < count; i++){
+    const nameEl = document.getElementById(`char${i}_name`);
+    if(!nameEl) continue;
+    charFormValues[i] = {
+      name: nameEl.value.trim(),
+      species: document.getElementById(`char${i}_species`).value,
+      speciesDetail: document.getElementById(`char${i}_speciesDetail`) ? document.getElementById(`char${i}_speciesDetail`).value.trim() : "",
+      creatureDesc: document.getElementById(`char${i}_creatureDesc`) ? document.getElementById(`char${i}_creatureDesc`).value.trim() : "",
+      bio: document.getElementById(`char${i}_bio`).value.trim(),
+      quirk: document.getElementById(`char${i}_quirk`).value.trim(),
+      secret: document.getElementById(`char${i}_secret`).value.trim(),
+      isHuman: document.getElementById(`char${i}_human`).value === 'human',
+      str: parseInt(document.getElementById(`char${i}_str`).value, 10) || 3,
+      dex: parseInt(document.getElementById(`char${i}_dex`).value, 10) || 3,
+      cha: parseInt(document.getElementById(`char${i}_cha`).value, 10) || 3,
+      color: getCharValue(i).color
+    };
+  }
+}
+
+function speciesExtraFieldHTML(c, i){
+  if(c.species === 'andere'){
+    return `
+      <div class="field" id="char${i}_speciesDetailWrap">
+        <label>${t('creature_desc_label')}</label>
+        <div style="display:flex;gap:0.5rem">
+          <input type="text" id="char${i}_creatureDesc" value="${c.creatureDesc||''}" placeholder="e.g. shimmering mist wraith with a raven's voice" style="flex:1">
+          <button type="button" class="btn secondary charGenBtn" data-action="creature" data-idx="${i}" style="white-space:nowrap">${t('creature_invent_btn')}</button>
         </div>
-      `;
-        }
+        <div class="hint">${t('creature_hint')}</div>
+      </div>
+    `;
+  }
+  return `
+    <div class="field" id="char${i}_speciesDetailWrap">
+      <label>${t('species_detail_label')}</label>
+      <input type="text" id="char${i}_speciesDetail" value="${c.speciesDetail||''}">
+    </div>
+  `;
+}
 
-        function renderCharForms(count) {
-            charFormsEl.innerHTML = Array.from({ length: count }, (_, i) => getCharValue(i)).map((c, i) => `
-        <div class="charform">
-          <div style="margin-bottom:0.6rem"><span class="swatch" style="background:${c.color}"></span><strong style="font-family:'Cinzel',serif;font-size:14px">Charakter ${i + 1}</strong></div>
-          <div class="row">
-            <div class="field">
-              <label>Name</label>
-              <input type="text" id="char${i}_name" value="${c.name}">
-            </div>
-          </div>
-          <div class="row">
-            <div class="field">
-              <label>Art</label>
-              <select id="char${i}_species" data-idx="${i}">
-                <option value="mensch" ${c.species === 'mensch' ? 'selected' : ''}>Mensch</option>
-                <option value="tier" ${c.species === 'tier' ? 'selected' : ''}>Tier</option>
-                <option value="andere" ${c.species === 'andere' ? 'selected' : ''}>Andere Kreatur</option>
-              </select>
-            </div>
-            <div class="field">
-              <label>Gesteuert von</label>
-              <select id="char${i}_human" data-idx="${i}">
-                <option value="ai" ${!c.isHuman ? 'selected' : ''}>KI</option>
-                <option value="human" ${c.isHuman ? 'selected' : ''}>Mensch (ich/Mitspieler)</option>
-              </select>
-            </div>
-          </div>
-          <div id="char${i}_speciesExtra">${speciesExtraFieldHTML(c, i)}</div>
-          <div class="row">
-            <div class="field">
-              <label>Stärke (1-5)</label>
-              <input type="number" id="char${i}_str" min="1" max="5" value="${c.str || 3}">
-            </div>
-            <div class="field">
-              <label>Geschick (1-5)</label>
-              <input type="number" id="char${i}_dex" min="1" max="5" value="${c.dex || 3}">
-            </div>
-            <div class="field">
-              <label>Charisma (1-5)</label>
-              <input type="number" id="char${i}_cha" min="1" max="5" value="${c.cha || 3}">
-            </div>
-          </div>
-          <div class="row">
-            <div class="field" style="flex:2;margin-bottom:0;min-width:200px">
-              <label>Kurzbiografie</label>
-              <div style="display:flex;gap:0.5rem">
-                <textarea id="char${i}_bio" rows="2" style="flex:1">${c.bio}</textarea>
-                <button type="button" class="btn secondary charGenBtn" data-action="bio" data-idx="${i}" style="white-space:nowrap;align-self:flex-start">KI generieren</button>
-              </div>
-            </div>
-          </div>
-          <details>
-            <summary>Erweitert: Sprachmuster &amp; geheimes Ziel (optional)</summary>
-            <div class="row">
-              <div class="field">
-                <label>Sprachmuster / Eigenart</label>
-                <input type="text" id="char${i}_quirk" value="${c.quirk || ''}" placeholder="z.B. nuschelt, flucht viel">
-              </div>
-              <div class="field">
-                <label>Geheimes Ziel / Beziehung zu anderen</label>
-                <input type="text" id="char${i}_secret" value="${c.secret || ''}" placeholder="z.B. misstraut Hubert insgeheim">
-              </div>
-            </div>
-          </details>
+function renderCharForms(count){
+  charFormsEl.innerHTML = Array.from({length: count}, (_, i) => getCharValue(i)).map((c, i) => `
+    <div class="charform">
+      <div style="margin-bottom:0.6rem"><span class="swatch" style="background:${c.color}"></span><strong style="font-family:'Cinzel',serif;font-size:14px">${t('char_label')} ${i+1}</strong></div>
+      <div class="row">
+        <div class="field">
+          <label>${t('name_label')}</label>
+          <input type="text" id="char${i}_name" value="${c.name}">
         </div>
-      `).join('');
-            updateNarratorLock();
+      </div>
+      <div class="row">
+        <div class="field">
+          <label>${t('species_label')}</label>
+          <select id="char${i}_species" data-idx="${i}">
+            <option value="mensch" ${c.species==='mensch'?'selected':''}>${t('species_human')}</option>
+            <option value="tier" ${c.species==='tier'?'selected':''}>${t('species_animal')}</option>
+            <option value="andere" ${c.species==='andere'?'selected':''}>${t('species_other')}</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>${t('controlled_by_label')}</label>
+          <select id="char${i}_human" data-idx="${i}">
+            <option value="ai" ${!c.isHuman?'selected':''}>${t('controlled_ai')}</option>
+            <option value="human" ${c.isHuman?'selected':''}>${t('controlled_human')}</option>
+          </select>
+        </div>
+      </div>
+      <div id="char${i}_speciesExtra">${speciesExtraFieldHTML(c, i)}</div>
+      <div class="row">
+        <div class="field">
+          <label>${t('str_label')}</label>
+          <input type="number" id="char${i}_str" min="1" max="5" value="${c.str||3}">
+        </div>
+        <div class="field">
+          <label>${t('dex_label')}</label>
+          <input type="number" id="char${i}_dex" min="1" max="5" value="${c.dex||3}">
+        </div>
+        <div class="field">
+          <label>${t('cha_label')}</label>
+          <input type="number" id="char${i}_cha" min="1" max="5" value="${c.cha||3}">
+        </div>
+      </div>
+      <div class="row">
+        <div class="field" style="flex:2;margin-bottom:0;min-width:200px">
+          <label>${t('bio_label')}</label>
+          <div style="display:flex;gap:0.5rem">
+            <textarea id="char${i}_bio" rows="2" style="flex:1">${c.bio}</textarea>
+            <button type="button" class="btn secondary charGenBtn" data-action="bio" data-idx="${i}" style="white-space:nowrap;align-self:flex-start">${t('ai_generate_btn')}</button>
+          </div>
+        </div>
+      </div>
+      <details>
+        <summary>${t('advanced_summary')}</summary>
+        <div class="row">
+          <div class="field">
+            <label>${t('quirk_label')}</label>
+            <input type="text" id="char${i}_quirk" value="${c.quirk||''}" placeholder="${t('quirk_placeholder')}">
+          </div>
+          <div class="field">
+            <label>${t('secret_label')}</label>
+            <input type="text" id="char${i}_secret" value="${c.secret||''}" placeholder="${t('secret_placeholder')}">
+          </div>
+        </div>
+      </details>
+    </div>
+  `).join('');
+  updateNarratorLock();
+}
+renderCharForms(currentCharCount);
+
+document.getElementById('charCount').addEventListener('input', (e) => {
+  let count = parseInt(e.target.value, 10);
+  if(isNaN(count) || count < 1) return;
+  if(count > 8) count = 8;
+  captureCharFormValues(currentCharCount);
+  currentCharCount = count;
+  renderCharForms(count);
+});
+
+charFormsEl.addEventListener('change', (e) => {
+  if(e.target.matches('[id$="_species"]')){
+    const i = e.target.dataset.idx;
+    captureCharFormValues(currentCharCount);
+    charFormValues[i].species = e.target.value;
+    document.getElementById(`char${i}_speciesExtra`).innerHTML = speciesExtraFieldHTML(charFormValues[i], i);
+  }
+  if(e.target.matches('[id$="_human"]')){
+    updateNarratorLock();
+  }
+});
+
+function getAnthropicKeyLive(){
+  const key = sanitizeKey(document.getElementById('anthropicKey').value);
+  if(!key){ alert('Bitte zuerst oben deinen Anthropic API Key eintragen.'); return null; }
+  return key;
+}
+
+charFormsEl.addEventListener('click', async (e) => {
+  const btn = e.target.closest('.charGenBtn');
+  if(!btn) return;
+  const key = getAnthropicKeyLive();
+  if(!key) return;
+  const i = btn.dataset.idx;
+  const action = btn.dataset.action;
+  const name = document.getElementById(`char${i}_name`).value.trim() || `Charakter ${parseInt(i)+1}`;
+  const species = document.getElementById(`char${i}_species`).value;
+  btn.disabled = true;
+  const originalLabel = btn.textContent;
+  btn.textContent = "...";
+  try{
+    if(action === 'creature'){
+      const sys = `Du erfindest kurze, einprägsame Kreaturbeschreibungen für ein Tabletop-Rollenspiel. Antworte NUR mit einem einzigen prägnanten Satz, ohne Einleitung, ohne Anführungszeichen. Antworte auf ${LANG_NAMES[uiLang]}.`;
+      const prompt = `Erfinde eine ungewöhnliche, nicht-menschliche, nicht-gewöhnlich-tierische Kreatur mit dem Namen "${name}" für eine D&D-artige Session.`;
+      const result = await callAnthropic(sys, prompt, key);
+      document.getElementById(`char${i}_creatureDesc`).value = result.replace(/^"|"$/g, '');
+    } else if(action === 'bio'){
+      const detail = species === 'andere'
+        ? (document.getElementById(`char${i}_creatureDesc`) ? document.getElementById(`char${i}_creatureDesc`).value.trim() : '')
+        : (document.getElementById(`char${i}_speciesDetail`) ? document.getElementById(`char${i}_speciesDetail`).value.trim() : '');
+      const sys = `Du schreibst extrem kurze Charakterbiografien (1-2 Sätze) für ein Tabletop-Rollenspiel. Antworte NUR mit der Biografie, ohne Einleitung, ohne Anführungszeichen. Antworte auf ${LANG_NAMES[uiLang]}.`;
+      const prompt = `Schreibe eine kurze Biografie/Charakterbeschreibung für: Name "${name}", Art: ${species}${detail ? ' ('+detail+')' : ''}.`;
+      const result = await callAnthropic(sys, prompt, key);
+      document.getElementById(`char${i}_bio`).value = result.replace(/^"|"$/g, '');
+    }
+  }catch(err){
+    alert('Fehler bei der KI-Generierung: ' + err.message);
+  }
+  btn.disabled = false;
+  btn.textContent = originalLabel;
+});
+
+async function buildAgentsFromForm(){
+  const agents = {};
+  agents["Erzähler"] = {
+    color: NARRATOR_COLOR,
+    role: narratorMode === 'ai' ? "Erzähler (KI)" : "Erzähler (du)"
+  };
+  const charNames = [];
+  characterSpecies = {};
+  for(let i = 0; i < currentCharCount; i++){
+    const defaults = getCharValue(i);
+    const name = document.getElementById(`char${i}_name`).value.trim() || defaults.name;
+    const species = document.getElementById(`char${i}_species`).value;
+    const isHuman = document.getElementById(`char${i}_human`).value === 'human';
+    const bio = document.getElementById(`char${i}_bio`).value.trim() || defaults.bio;
+    const quirk = document.getElementById(`char${i}_quirk`).value.trim();
+    const secret = document.getElementById(`char${i}_secret`).value.trim();
+    const str = parseInt(document.getElementById(`char${i}_str`).value, 10) || 3;
+    const dex = parseInt(document.getElementById(`char${i}_dex`).value, 10) || 3;
+    const cha = parseInt(document.getElementById(`char${i}_cha`).value, 10) || 3;
+    const attrLine = `Stärke ${str}/5, Geschick ${dex}/5, Charisma ${cha}/5`;
+
+    let speciesLine = "";
+    let roleLabel = "Mensch";
+    if(species === 'mensch'){
+      const detail = document.getElementById(`char${i}_speciesDetail`) ? document.getElementById(`char${i}_speciesDetail`).value.trim() : "";
+      speciesLine = `Mensch${detail ? ', ' + detail : ''}`;
+      roleLabel = detail || "Mensch";
+    } else if(species === 'tier'){
+      const detail = document.getElementById(`char${i}_speciesDetail`) ? document.getElementById(`char${i}_speciesDetail`).value.trim() : "";
+      speciesLine = `Tier${detail ? ' (' + detail + ')' : ''}, kann trotzdem normal kommunizieren`;
+      roleLabel = detail ? `Tier (${detail})` : "Tier";
+    } else {
+      let creatureDesc = document.getElementById(`char${i}_creatureDesc`) ? document.getElementById(`char${i}_creatureDesc`).value.trim() : "";
+      if(!creatureDesc){
+        const key = anthropicKey || getAnthropicKeyLive();
+        if(key){
+          try{
+            const sys = `Du erfindest kurze, einprägsame Kreaturbeschreibungen für ein Tabletop-Rollenspiel. Antworte NUR mit einem einzigen prägnanten Satz, ohne Einleitung, ohne Anführungszeichen. Antworte auf ${LANG_NAMES[uiLang]}.`;
+            creatureDesc = await callAnthropic(sys, `Erfinde eine ungewöhnliche Kreatur mit dem Namen "${name}".`, key);
+            creatureDesc = creatureDesc.replace(/^"|"$/g, '');
+          }catch(e){ creatureDesc = "ein rätselhaftes, ungewöhnliches Wesen"; }
+        } else {
+          creatureDesc = "ein rätselhaftes, ungewöhnliches Wesen";
         }
-        renderCharForms(currentCharCount);
+      }
+      speciesLine = `Keine übliche Kreatur, sondern: ${creatureDesc}. Kann trotzdem normal mit Menschen und anderen Charakteren kommunizieren`;
+      roleLabel = "Kreatur";
+    }
+    characterSpecies[name] = `${speciesLine}. Attribute: ${attrLine}`;
 
-        document.getElementById('charCount').addEventListener('input', (e) => {
-            let count = parseInt(e.target.value, 10);
-            if (isNaN(count) || count < 1) return;
-            if (count > 8) count = 8;
-            captureCharFormValues(currentCharCount);
-            currentCharCount = count;
-            renderCharForms(count);
-        });
+    if(isHuman){
+      agents[name] = {
+        isHuman: true,
+        color: defaults.color,
+        role: roleLabel + " · Mensch"
+      };
+    } else {
+      let extra = "";
+      if(quirk) extra += ` Sprachliche Eigenart, die gelegentlich durchscheint: ${quirk}.`;
+      if(secret) extra += ` Geheimes Ziel/Beziehung (beeinflusst dein Verhalten subtil, sprich es nicht direkt aus, außer es passt): ${secret}.`;
+      agents[name] = {
+        isHuman: false,
+        system: `WICHTIGSTE REGEL: Antworte IMMER ausschließlich auf ${LANG_NAMES[uiLang]}, unabhängig davon in welcher Sprache diese Anweisungen geschrieben sind. Du spielst ${name}. Du bist: ${speciesLine}. Deine Attribute: ${attrLine} (5 ist sehr stark/geschickt/charismatisch, 1 ist sehr schwach). ${bio}${extra} Alle Charaktere in dieser Gruppe - egal ob Mensch, Tier oder andere Kreatur - können sich untereinander problemlos verständigen. Antworte immer in Ich-Form, bleibe im Charakter. Der Erzähler beschreibt Situationen und spricht dich dabei namentlich an. Du entscheidest EIGENSTÄNDIG und AKTIV, was du als Nächstes tust oder sagst, passend zu deiner Persönlichkeit - du musst nicht explizit gefragt werden "was tust du". Sprich andere Charaktere nur an, wenn der Erzähler beschrieben hat, dass ihr am selben Ort seid. Erfinde KEINE neuen Details, Gegenstände, Personen, Orte oder Ereignisse, die der Erzähler nicht ausdrücklich genannt hat - reagiere nur auf tatsächlich Beschriebenes. Wenn deine Handlung mehr Informationen erfordert (umschauen, durchsuchen etc.), formuliere das als Absicht/Frage an den Erzähler statt das Ergebnis zu erfinden. Wenn du selbst etwas durchsuchst und der Erzähler das bereits erlaubt/beschrieben hat, kannst du einen Fund melden - kennzeichne das exakt so: [LOOT: Gegenstand -> ${name}]. Falls auf dich ein Statuseffekt zutrifft oder endet, kannst du das kennzeichnen: [STATUS: ${name} +Effekt] bzw. [STATUS: ${name} -Effekt]. Für einen Würfelwurf schreibe NUR [WURF:W20:DC<Zahl>] (Schwierigkeitsgrad meist 10-16, situativ eingeschätzt) an der Stelle des Ergebnisses - erfinde KEINE eigene Zahl, das System würfelt echt und liefert dir danach das Ergebnis. Bei einer 1 ist es automatisch ein kritischer Fehlschlag, bei einer 20 automatisch ein kritischer Erfolg. Setze wörtliche Rede, die du tatsächlich aussprichst, konsequent in Anführungszeichen ("..."), Handlungen/Gedanken außerhalb der Anführungszeichen. Erwähne NIEMALS sichtbar im Text, dass du etwas korrigierst oder dich an den Verlauf hältst (keine Sätze wie "Korrektur laut Verlauf: ..." o.ä.) - erzähle einfach direkt weiter. Halte dich so kurz wie möglich, aber so lang wie nötig: meist 1-2 Sätze, bei wichtigen Momenten oder nach einem Wurf bis zu 4 Sätze. Rede nicht künstlich lang, wenn es nichts zu sagen gibt.`,
+        color: defaults.color,
+        role: roleLabel
+      };
+    }
+    charNames.push(name);
+    if(!characterState[name]){
+      characterState[name] = { hp: START_HP, maxHp: START_HP, inventory: [], status: [] };
+    }
+  }
+  AGENTS = agents;
+  CHAR_NAMES = charNames;
 
-        charFormsEl.addEventListener('change', (e) => {
-            if (e.target.matches('[id$="_species"]')) {
-                const i = e.target.dataset.idx;
-                captureCharFormValues(currentCharCount);
-                charFormValues[i].species = e.target.value;
-                document.getElementById(`char${i}_speciesExtra`).innerHTML = speciesExtraFieldHTML(charFormValues[i], i);
-            }
-            if (e.target.matches('[id$="_human"]')) {
-                updateNarratorLock();
-            }
-        });
-
-        function getAnthropicKeyLive() {
-            const key = sanitizeKey(document.getElementById('accessCode').value);
-            if (!key) { alert('Bitte zuerst oben deinen Zugangscode eintragen.'); return null; }
-            return key;
-        }
-
-        charFormsEl.addEventListener('click', async (e) => {
-            const btn = e.target.closest('.charGenBtn');
-            if (!btn) return;
-            const key = getAnthropicKeyLive();
-            if (!key) return;
-            const i = btn.dataset.idx;
-            const action = btn.dataset.action;
-            const name = document.getElementById(`char${i}_name`).value.trim() || `Charakter ${parseInt(i) + 1}`;
-            const species = document.getElementById(`char${i}_species`).value;
-            btn.disabled = true;
-            const originalLabel = btn.textContent;
-            btn.textContent = "...";
-            try {
-                if (action === 'creature') {
-                    const sys = "Du erfindest kurze, einprägsame Kreaturbeschreibungen für ein Tabletop-Rollenspiel. Antworte NUR mit einem einzigen prägnanten Satz, ohne Einleitung, ohne Anführungszeichen.";
-                    const prompt = `Erfinde eine ungewöhnliche, nicht-menschliche, nicht-gewöhnlich-tierische Kreatur mit dem Namen "${name}" für eine D&D-artige Session.`;
-                    const result = await callAnthropic(sys, prompt, key);
-                    document.getElementById(`char${i}_creatureDesc`).value = result.replace(/^"|"$/g, '');
-                } else if (action === 'bio') {
-                    const detail = species === 'andere'
-                        ? (document.getElementById(`char${i}_creatureDesc`) ? document.getElementById(`char${i}_creatureDesc`).value.trim() : '')
-                        : (document.getElementById(`char${i}_speciesDetail`) ? document.getElementById(`char${i}_speciesDetail`).value.trim() : '');
-                    const sys = "Du schreibst extrem kurze Charakterbiografien (1-2 Sätze) für ein Tabletop-Rollenspiel. Antworte NUR mit der Biografie, ohne Einleitung, ohne Anführungszeichen.";
-                    const prompt = `Schreibe eine kurze Biografie/Charakterbeschreibung für: Name "${name}", Art: ${species}${detail ? ' (' + detail + ')' : ''}.`;
-                    const result = await callAnthropic(sys, prompt, key);
-                    document.getElementById(`char${i}_bio`).value = result.replace(/^"|"$/g, '');
-                }
-            } catch (err) {
-                alert('Fehler bei der KI-Generierung: ' + err.message);
-            }
-            btn.disabled = false;
-            btn.textContent = originalLabel;
-        });
-
-        async function buildAgentsFromForm() {
-            const agents = {};
-            agents["Erzähler"] = {
-                color: NARRATOR_COLOR,
-                role: narratorMode === 'ai' ? "Erzähler (KI)" : "Erzähler (du)"
-            };
-            const charNames = [];
-            characterSpecies = {};
-            for (let i = 0; i < currentCharCount; i++) {
-                const defaults = getCharValue(i);
-                const name = document.getElementById(`char${i}_name`).value.trim() || defaults.name;
-                const species = document.getElementById(`char${i}_species`).value;
-                const isHuman = document.getElementById(`char${i}_human`).value === 'human';
-                const bio = document.getElementById(`char${i}_bio`).value.trim() || defaults.bio;
-                const quirk = document.getElementById(`char${i}_quirk`).value.trim();
-                const secret = document.getElementById(`char${i}_secret`).value.trim();
-                const str = parseInt(document.getElementById(`char${i}_str`).value, 10) || 3;
-                const dex = parseInt(document.getElementById(`char${i}_dex`).value, 10) || 3;
-                const cha = parseInt(document.getElementById(`char${i}_cha`).value, 10) || 3;
-                const attrLine = `Stärke ${str}/5, Geschick ${dex}/5, Charisma ${cha}/5`;
-
-                let speciesLine = "";
-                let roleLabel = "Mensch";
-                if (species === 'mensch') {
-                    const detail = document.getElementById(`char${i}_speciesDetail`) ? document.getElementById(`char${i}_speciesDetail`).value.trim() : "";
-                    speciesLine = `Mensch${detail ? ', ' + detail : ''}`;
-                    roleLabel = detail || "Mensch";
-                } else if (species === 'tier') {
-                    const detail = document.getElementById(`char${i}_speciesDetail`) ? document.getElementById(`char${i}_speciesDetail`).value.trim() : "";
-                    speciesLine = `Tier${detail ? ' (' + detail + ')' : ''}, kann trotzdem normal kommunizieren`;
-                    roleLabel = detail ? `Tier (${detail})` : "Tier";
-                } else {
-                    let creatureDesc = document.getElementById(`char${i}_creatureDesc`) ? document.getElementById(`char${i}_creatureDesc`).value.trim() : "";
-                    if (!creatureDesc) {
-                        const key = accessCode || getAnthropicKeyLive();
-                        if (key) {
-                            try {
-                                const sys = "Du erfindest kurze, einprägsame Kreaturbeschreibungen für ein Tabletop-Rollenspiel. Antworte NUR mit einem einzigen prägnanten Satz, ohne Einleitung, ohne Anführungszeichen.";
-                                creatureDesc = await callAnthropic(sys, `Erfinde eine ungewöhnliche Kreatur mit dem Namen "${name}".`, key);
-                                creatureDesc = creatureDesc.replace(/^"|"$/g, '');
-                            } catch (e) { creatureDesc = "ein rätselhaftes, ungewöhnliches Wesen"; }
-                        } else {
-                            creatureDesc = "ein rätselhaftes, ungewöhnliches Wesen";
-                        }
-                    }
-                    speciesLine = `Keine übliche Kreatur, sondern: ${creatureDesc}. Kann trotzdem normal mit Menschen und anderen Charakteren kommunizieren`;
-                    roleLabel = "Kreatur";
-                }
-                characterSpecies[name] = `${speciesLine}. Attribute: ${attrLine}`;
-
-                if (isHuman) {
-                    agents[name] = {
-                        isHuman: true,
-                        color: defaults.color,
-                        role: roleLabel + " · Mensch"
-                    };
-                } else {
-                    let extra = "";
-                    if (quirk) extra += ` Sprachliche Eigenart, die gelegentlich durchscheint: ${quirk}.`;
-                    if (secret) extra += ` Geheimes Ziel/Beziehung (beeinflusst dein Verhalten subtil, sprich es nicht direkt aus, außer es passt): ${secret}.`;
-                    agents[name] = {
-                        isHuman: false,
-                        system: `Du spielst ${name}. Du bist: ${speciesLine}. Deine Attribute: ${attrLine} (5 ist sehr stark/geschickt/charismatisch, 1 ist sehr schwach). ${bio}${extra} Alle Charaktere in dieser Gruppe - egal ob Mensch, Tier oder andere Kreatur - können sich untereinander problemlos verständigen. Antworte immer in Ich-Form, bleibe im Charakter. Der Erzähler beschreibt Situationen und spricht dich dabei namentlich an. Du entscheidest EIGENSTÄNDIG und AKTIV, was du als Nächstes tust oder sagst, passend zu deiner Persönlichkeit - du musst nicht explizit gefragt werden "was tust du". Sprich andere Charaktere nur an, wenn der Erzähler beschrieben hat, dass ihr am selben Ort seid. Erfinde KEINE neuen Details, Gegenstände, Personen, Orte oder Ereignisse, die der Erzähler nicht ausdrücklich genannt hat - reagiere nur auf tatsächlich Beschriebenes. Wenn deine Handlung mehr Informationen erfordert (umschauen, durchsuchen etc.), formuliere das als Absicht/Frage an den Erzähler statt das Ergebnis zu erfinden. Wenn du selbst etwas durchsuchst und der Erzähler das bereits erlaubt/beschrieben hat, kannst du einen Fund melden - kennzeichne das exakt so: [LOOT: Gegenstand -> ${name}]. Falls auf dich ein Statuseffekt zutrifft oder endet, kannst du das kennzeichnen: [STATUS: ${name} +Effekt] bzw. [STATUS: ${name} -Effekt]. Für einen Würfelwurf schreibe NUR [WURF:W20:DC<Zahl>] (Schwierigkeitsgrad meist 10-16, situativ eingeschätzt) an der Stelle des Ergebnisses - erfinde KEINE eigene Zahl, das System würfelt echt und liefert dir danach das Ergebnis. Bei einer 1 ist es automatisch ein kritischer Fehlschlag, bei einer 20 automatisch ein kritischer Erfolg. Setze wörtliche Rede, die du tatsächlich aussprichst, konsequent in Anführungszeichen ("..."), Handlungen/Gedanken außerhalb der Anführungszeichen. Erwähne NIEMALS sichtbar im Text, dass du etwas korrigierst oder dich an den Verlauf hältst (keine Sätze wie "Korrektur laut Verlauf: ..." o.ä.) - erzähle einfach direkt weiter. Halte dich so kurz wie möglich, aber so lang wie nötig: meist 1-2 Sätze, bei wichtigen Momenten oder nach einem Wurf bis zu 4 Sätze. Rede nicht künstlich lang, wenn es nichts zu sagen gibt.`,
-                        color: defaults.color,
-                        role: roleLabel
-                    };
-                }
-                charNames.push(name);
-                if (!characterState[name]) {
-                    characterState[name] = { hp: START_HP, maxHp: START_HP, inventory: [], status: [] };
-                }
-            }
-            AGENTS = agents;
-            CHAR_NAMES = charNames;
-
-            if (narratorMode === 'ai') {
-                const style = document.getElementById('narratorStyle').value.trim();
-                const difficulty = document.getElementById('narratorDifficulty').value;
-                narratorSystemPrompt = `Du bist der KI-Erzähler (Spielleiter) einer D&D-Session. ${style}
+  if(narratorMode === 'ai'){
+    const style = document.getElementById('narratorStyle').value.trim();
+    const difficulty = document.getElementById('narratorDifficulty').value;
+    narratorSystemPrompt = `WICHTIGSTE REGEL: Antworte IMMER ausschließlich auf ${LANG_NAMES[uiLang]}, unabhängig davon in welcher Sprache diese Anweisungen geschrieben sind.
+Du bist der KI-Erzähler (Spielleiter) einer D&D-Session. ${style}
 ${DIFFICULTY_TEXT[difficulty]}
 Du sprichst jeweils einen einzelnen Charakter mit Namen an und beschreibst knapp dessen Situation, oder mehrere, wenn sie zusammen sind. MAXIMAL 2-3 kurze Sätze.
 Du bist AKTIV und treibst die Handlung voran: Gegner tauchen auf, Fallen lösen aus, die Umgebung verändert sich, Gefahren entstehen.
@@ -973,627 +724,636 @@ Behalte frühere Verletzungen, Verluste und Gegenstände konsequent im Kopf, bas
 Baue gelegentlich Sinneseindrücke ein (Geruch, Geräusche, Temperatur, Licht). Setze wörtliche Rede von NPCs, die du sprechen lässt, konsequent in Anführungszeichen ("..."), Beschreibungen außerhalb davon.
 Wenn ein Charakter Schaden nimmt: [SCHADEN: Charaktername -Zahl]. Heilung: [HEILUNG: Charaktername +Zahl]. Beute: [LOOT: Gegenstand -> Charaktername]. Statuseffekt hinzufügen (z.B. vergiftet, betäubt, gefesselt): [STATUS: Charaktername +Effekt]. Statuseffekt entfernen: [STATUS: Charaktername -Effekt]. Neues Ziel/Quest für die Gruppe festlegen: [QUEST: Kurze Zielbeschreibung]. Ziel als erledigt markieren: [QUEST_DONE: Kurze Beschreibung, die zum ursprünglichen Ziel passt]. Setze gelegentlich, aber nicht bei jeder Antwort, ein neues Ziel, wenn die Handlung es hergibt.
 Du triffst keine Entscheidungen für die Spieler-Charaktere selbst - weder KI- noch menschlich gesteuerte. SEHR WICHTIG: Beende JEDE deiner Antworten mit einer klaren, direkten Aufforderung oder Frage an einen bestimmten Charakter, namentlich genannt (z.B. "Was tust du, Lars?" oder "Lars, wie reagierst du darauf?"). Lass eine Szene NIEMALS unkommentiert enden, ohne dass klar ist, wer als Nächstes gefragt ist und worauf reagiert werden soll. ABSOLUT KRITISCHE REGEL: Sobald du eine Frage an einen MENSCHLICH gesteuerten Charakter stellst, HÖRST DU SOFORT AUF ZU SCHREIBEN. Eine einzelne Antwort von dir darf NIEMALS mehr als eine Frage an denselben menschlichen Charakter enthalten und NIEMALS selbst erfinden, was dieser Charakter darauf antwortet oder tut - auch nicht "just in case" oder als Beispiel. Kein Würfelwurf, keine Reaktion Dritter, kein Fortschritt der Szene, bevor die tatsächliche Antwort des menschlichen Spielers vorliegt. Schreibe niemals einen Dialog oder eine Aktion für einen menschlichen Charakter, den du nicht wirklich von ihm bekommen hast.`;
-            }
-        }
+  }
+}
 
-        function stateSummary() {
-            if (!CHAR_NAMES.length) return "-";
-            return CHAR_NAMES.map(n => {
-                const s = characterState[n] || { hp: START_HP, maxHp: START_HP, inventory: [], status: [] };
-                const inv = s.inventory.length ? s.inventory.join(', ') : 'leer';
-                const status = (s.status && s.status.length) ? s.status.join(', ') : 'keine';
-                return `${n} (HP ${s.hp}/${s.maxHp}, Inventar: ${inv}, Status: ${status})`;
-            }).join('; ');
-        }
+function stateSummary(){
+  if(!CHAR_NAMES.length) return "-";
+  return CHAR_NAMES.map(n => {
+    const s = characterState[n] || {hp:START_HP,maxHp:START_HP,inventory:[],status:[]};
+    const inv = s.inventory.length ? s.inventory.join(', ') : 'leer';
+    const status = (s.status && s.status.length) ? s.status.join(', ') : 'keine';
+    return `${n} (HP ${s.hp}/${s.maxHp}, Inventar: ${inv}, Status: ${status})`;
+  }).join('; ');
+}
 
-        function speciesSummaryText() {
-            return CHAR_NAMES.map(n => `${n}: ${characterSpecies[n] || 'Mensch'}`).join(' | ');
-        }
+function speciesSummaryText(){
+  return CHAR_NAMES.map(n => `${n}: ${characterSpecies[n] || 'Mensch'}`).join(' | ');
+}
 
-        function renderRoster(activeName) {
-            rosterEl.innerHTML = Object.entries(AGENTS).map(([name, a]) => {
-                const s = characterState[name];
-                const statusBadges = (s && s.status && s.status.length)
-                    ? `<div class="status-badges">${s.status.map(st => `<span class="status-badge">${st}</span>`).join('')}</div>` : '';
-                const hpBlock = s ? `
-          <div class="hp">HP ${s.hp}/${s.maxHp}</div>
-          <div class="hpbar"><div class="hpbar-fill" style="width:${Math.max(0, (s.hp / s.maxHp) * 100)}%"></div></div>
-          <div class="inv">${s.inventory.length ? s.inventory.join(', ') : ''}</div>
-          ${statusBadges}
-        ` : '';
-                const initIdx = initiativeOrder.indexOf(name);
-                const initBadge = initIdx !== -1 ? `<div class="initiative-badge">${initIdx + 1}</div>` : '';
-                return `
-        <div class="card ${name === activeName ? 'active' : ''}" style="--card-color:${a.color}">
-          ${initBadge}
-          <div class="dot"></div>
-          <div class="name">${name}</div>
-          <div class="role">${a.role}</div>
-          ${hpBlock}
-        </div>
-      `;
-            }).join('');
-        }
+function renderRoster(activeName){
+  rosterEl.innerHTML = Object.entries(AGENTS).map(([name, a]) => {
+    const s = characterState[name];
+    const statusBadges = (s && s.status && s.status.length)
+      ? `<div class="status-badges">${s.status.map(st => `<span class="status-badge">${st}</span>`).join('')}</div>` : '';
+    const hpBlock = s ? `
+      <div class="hp">HP ${s.hp}/${s.maxHp}</div>
+      <div class="hpbar"><div class="hpbar-fill" style="width:${Math.max(0,(s.hp/s.maxHp)*100)}%"></div></div>
+      <div class="inv">${s.inventory.length ? s.inventory.join(', ') : ''}</div>
+      ${statusBadges}
+    ` : '';
+    const initIdx = initiativeOrder.indexOf(name);
+    const initBadge = initIdx !== -1 ? `<div class="initiative-badge">${initIdx+1}</div>` : '';
+    return `
+    <div class="card ${name===activeName ? 'active':''}" style="--card-color:${a.color}">
+      ${initBadge}
+      <div class="dot"></div>
+      <div class="name">${name}</div>
+      <div class="role">${a.role}</div>
+      ${hpBlock}
+    </div>
+  `;
+  }).join('');
+}
 
-        function renderQuests() {
-            const panel = document.getElementById('questPanel');
-            const list = document.getElementById('questList');
-            if (!questLog.length) {
-                panel.style.display = 'none';
-                return;
-            }
-            panel.style.display = 'block';
-            list.innerHTML = questLog.map(q => `
-        <div class="quest-item ${q.done ? 'done' : ''}">
-          <span class="quest-dot">${q.done ? '✓' : '○'}</span>
-          <span>${q.text}</span>
-        </div>
-      `).join('');
-        }
+function renderQuests(){
+  const panel = document.getElementById('questPanel');
+  const list = document.getElementById('questList');
+  if(!questLog.length){
+    panel.style.display = 'none';
+    return;
+  }
+  panel.style.display = 'block';
+  list.innerHTML = questLog.map(q => `
+    <div class="quest-item ${q.done ? 'done' : ''}">
+      <span class="quest-dot">${q.done ? '✓' : '○'}</span>
+      <span>${q.text}</span>
+    </div>
+  `).join('');
+}
 
-        function questSummaryText() {
-            if (!questLog.length) return "keine";
-            return questLog.map(q => `${q.text}${q.done ? ' (erledigt)' : ''}`).join('; ');
-        }
+function questSummaryText(){
+  if(!questLog.length) return "keine";
+  return questLog.map(q => `${q.text}${q.done ? ' (erledigt)' : ''}`).join('; ');
+}
 
-        function escapeHtml(str) {
-            return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-        }
+function escapeHtml(str){
+  return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
 
-        function highlightText(text) {
-            let escaped = escapeHtml(text);
-            escaped = escaped.replace(/„[^“]*“|"[^"]*"/g, (m) => `<span class="dialogue">${m}</span>`);
-            escaped = escaped.replace(/Wurf: (kritischer Erfolg|Erfolg|kritischer Fehlschlag|Fehlschlag)/gi, (m) => {
-                const cls = /Erfolg/i.test(m) ? 'dice-success' : 'dice-fail';
-                return `<span class="${cls}">${m}</span>`;
-            });
-            return escaped;
-        }
+function highlightText(text){
+  let escaped = escapeHtml(text);
+  escaped = escaped.replace(/„[^“]*“|"[^"]*"/g, (m) => `<span class="dialogue">${m}</span>`);
+  const words = DICE_WORDS[uiLang];
+  const successAlt = [words.success, words.critSuccess].map(w => w.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')).join('|');
+  const failAlt = [words.fail, words.critFail].map(w => w.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')).join('|');
+  const diceRe = new RegExp(`${words.prefix}: (${successAlt}|${failAlt})`, 'gi');
+  escaped = escaped.replace(diceRe, (m) => {
+    const cls = new RegExp(successAlt, 'i').test(m) ? 'dice-success' : 'dice-fail';
+    return `<span class="${cls}">${m}</span>`;
+  });
+  return escaped;
+}
 
-        function appendEntry(speaker, text, isSystem) {
-            const color = AGENTS[speaker] ? AGENTS[speaker].color : 'var(--muted)';
-            const div = document.createElement('div');
-            div.className = 'entry' + (isSystem ? ' system' : '');
-            div.style.setProperty('--entry-color', color);
-            div.innerHTML = `<div class="speaker">${speaker}</div><div class="text">${isSystem ? escapeHtml(text) : highlightText(text)}</div>`;
-            logEl.appendChild(div);
-            logEl.scrollTop = logEl.scrollHeight;
-        }
+function appendEntry(speaker, text, isSystem){
+  const color = AGENTS[speaker] ? AGENTS[speaker].color : 'var(--muted)';
+  const div = document.createElement('div');
+  div.className = 'entry' + (isSystem ? ' system' : '');
+  div.style.setProperty('--entry-color', color);
+  div.innerHTML = `<div class="speaker">${speaker}</div><div class="text">${isSystem ? escapeHtml(text) : highlightText(text)}</div>`;
+  logEl.appendChild(div);
+  logEl.scrollTop = logEl.scrollHeight;
+}
 
-        function setStatus(msg, isError) {
-            statusEl.textContent = msg || "";
-            statusEl.className = 'status' + (isError ? ' error' : '');
-        }
+function setStatus(msg, isError){
+  statusEl.textContent = msg || "";
+  statusEl.className = 'status' + (isError ? ' error' : '');
+}
 
-        function buildContext() {
-            return storyLog.map(e => `${e.speaker}: ${e.text}`).join('\n');
-        }
+function buildContext(){
+  return storyLog.map(e => `${e.speaker}: ${e.text}`).join('\n');
+}
 
-        function rollDice(sides) { return Math.floor(Math.random() * sides) + 1; }
+function rollDice(sides){ return Math.floor(Math.random()*sides)+1; }
 
-        let audioCtx = null;
-        function playTone(freq, duration, type) {
-            try {
-                if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-                const osc = audioCtx.createOscillator();
-                const gain = audioCtx.createGain();
-                osc.type = type || 'sine';
-                osc.frequency.value = freq;
-                gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
-                gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
-                osc.connect(gain).connect(audioCtx.destination);
-                osc.start();
-                osc.stop(audioCtx.currentTime + duration);
-            } catch (e) { }
-        }
-        function playDiceSound(kind) {
-            if (kind === 'crit-success') { playTone(880, 0.12); setTimeout(() => playTone(1175, 0.12), 90); setTimeout(() => playTone(1568, 0.18), 180); }
-            else if (kind === 'success') { playTone(880, 0.12); setTimeout(() => playTone(1175, 0.18), 100); }
-            else if (kind === 'crit-fail') { playTone(180, 0.3, 'sawtooth'); setTimeout(() => playTone(120, 0.35, 'sawtooth'), 120); }
-            else if (kind === 'fail') { playTone(220, 0.25, 'sawtooth'); }
-            else { playTone(440, 0.08); }
-        }
+let audioCtx = null;
+function playTone(freq, duration, type){
+  try{
+    if(!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = type || 'sine';
+    osc.frequency.value = freq;
+    gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+    osc.connect(gain).connect(audioCtx.destination);
+    osc.start();
+    osc.stop(audioCtx.currentTime + duration);
+  }catch(e){}
+}
+function playDiceSound(kind){
+  if(kind === 'crit-success'){ playTone(880,0.12); setTimeout(()=>playTone(1175,0.12),90); setTimeout(()=>playTone(1568,0.18),180); }
+  else if(kind === 'success'){ playTone(880,0.12); setTimeout(()=>playTone(1175,0.18),100); }
+  else if(kind === 'crit-fail'){ playTone(180,0.3,'sawtooth'); setTimeout(()=>playTone(120,0.35,'sawtooth'),120); }
+  else if(kind === 'fail'){ playTone(220,0.25,'sawtooth'); }
+  else { playTone(440,0.08); }
+}
 
-        function resolveDiceTags(text) {
-            return text.replace(/\[WURF:\s*W(\d+)(?::DC\d+)?\]/gi, () => "Wurf: unklar");
-        }
+function resolveDiceTags(text){
+  return text.replace(/\[WURF:\s*W(\d+)(?::DC\d+)?\]/gi, () => `${DICE_WORDS[uiLang].prefix}: ?`);
+}
 
-        function resolveDiceSimple(text) {
-            return text.replace(/\[WURF:\s*W(\d+)(?::DC(\d+))?\]/gi, (m, sidesStr, dcStr) => {
-                const sides = parseInt(sidesStr, 10);
-                const dc = dcStr !== undefined ? parseInt(dcStr, 10) : null;
-                const roll = rollDice(sides);
-                let label = null;
-                if (sides === 20 && roll === 20) label = "kritischer Erfolg";
-                else if (sides === 20 && roll === 1) label = "kritischer Fehlschlag";
-                else if (dc !== null) label = roll >= dc ? "Erfolg" : "Fehlschlag";
-                if (label) {
-                    sessionStats.rolls++;
-                    if (label === "kritischer Erfolg") sessionStats.critSuccess++;
-                    else if (label === "kritischer Fehlschlag") sessionStats.critFail++;
-                    else if (label === "Erfolg") sessionStats.success++;
-                    else sessionStats.fail++;
-                }
-                return label ? `Wurf: ${label}` : `Wurf: unklar`;
-            });
-        }
+function resolveDiceSimple(text){
+  return text.replace(/\[WURF:\s*W(\d+)(?::DC(\d+))?\]/gi, (m, sidesStr, dcStr) => {
+    const sides = parseInt(sidesStr,10);
+    const dc = dcStr !== undefined ? parseInt(dcStr,10) : null;
+    const roll = rollDice(sides);
+    let kind = null;
+    if(sides===20 && roll===20) kind = "critSuccess";
+    else if(sides===20 && roll===1) kind = "critFail";
+    else if(dc !== null) kind = roll>=dc ? "success" : "fail";
+    if(kind){
+      sessionStats.rolls++;
+      if(kind==="critSuccess") sessionStats.critSuccess++;
+      else if(kind==="critFail") sessionStats.critFail++;
+      else if(kind==="success") sessionStats.success++;
+      else sessionStats.fail++;
+    }
+    const words = DICE_WORDS[uiLang];
+    return kind ? `${words.prefix}: ${words[kind]}` : `${words.prefix}: ?`;
+  });
+}
 
-        async function resolveDiceWithContinuation(text, systemPrompt) {
-            const re = /\[WURF:\s*W(\d+)(?::DC(\d+))?\]/i;
-            const match = text.match(re);
-            if (!match) return text;
-            const sides = parseInt(match[1], 10);
-            const dc = match[2] !== undefined ? parseInt(match[2], 10) : 12;
-            const roll = rollDice(sides);
-            let resultLabel;
-            if (sides === 20 && roll === 20) resultLabel = "kritischer Erfolg";
-            else if (sides === 20 && roll === 1) resultLabel = "kritischer Fehlschlag";
-            else resultLabel = roll >= dc ? "Erfolg" : "Fehlschlag";
-            sessionStats.rolls++;
-            if (resultLabel === "kritischer Erfolg") sessionStats.critSuccess++;
-            else if (resultLabel === "kritischer Fehlschlag") sessionStats.critFail++;
-            else if (resultLabel === "Erfolg") sessionStats.success++;
-            else sessionStats.fail++;
-            const prefix = text.slice(0, match.index).trim();
-            const suffix = text.slice(match.index + match[0].length).trim();
-            let continuation = "";
-            try {
-                const prompt = `Bisheriger Text: "${prefix}"\nWurf-Ergebnis: ${roll} (Schwierigkeit ${dc}) -> ${resultLabel}.\nSetze in EINEM kurzen Satz fort und beschreibe NUR die direkte Konsequenz dieses konkreten Wurfs, passend zum Ergebnis. Erfinde KEINE zusätzlichen Handlungen der beteiligten Person, die nicht bereits im bisherigen Text genannt wurden. Antworte NUR mit der Fortsetzung, ohne den bisherigen Text zu wiederholen.`;
-                continuation = await callAnthropic(systemPrompt, prompt);
-            } catch (e) {
-                continuation = resultLabel.includes("Erfolg") ? "Es gelingt." : "Es misslingt.";
-            }
-            let combined = `${prefix} Wurf: ${resultLabel}. ${continuation}`;
-            if (suffix) combined += ` ${suffix}`;
-            return await resolveDiceWithContinuation(combined, systemPrompt);
-        }
+async function resolveDiceWithContinuation(text, systemPrompt){
+  const re = /\[WURF:\s*W(\d+)(?::DC(\d+))?\]/i;
+  const match = text.match(re);
+  if(!match) return text;
+  const sides = parseInt(match[1],10);
+  const dc = match[2] !== undefined ? parseInt(match[2],10) : 12;
+  const roll = rollDice(sides);
+  let kind;
+  if(sides===20 && roll===20) kind = "critSuccess";
+  else if(sides===20 && roll===1) kind = "critFail";
+  else kind = roll>=dc ? "success" : "fail";
+  sessionStats.rolls++;
+  if(kind==="critSuccess") sessionStats.critSuccess++;
+  else if(kind==="critFail") sessionStats.critFail++;
+  else if(kind==="success") sessionStats.success++;
+  else sessionStats.fail++;
+  const words = DICE_WORDS[uiLang];
+  const resultLabel = words[kind];
+  const prefix = text.slice(0, match.index).trim();
+  const suffix = text.slice(match.index + match[0].length).trim();
+  let continuation = "";
+  try{
+    const prompt = `Bisheriger Text: "${prefix}"\nWurf-Ergebnis: ${roll} (Schwierigkeit ${dc}) -> ${resultLabel}.\nSetze in EINEM kurzen Satz fort und beschreibe NUR die direkte Konsequenz dieses konkreten Wurfs, passend zum Ergebnis. Erfinde KEINE zusätzlichen Handlungen der beteiligten Person, die nicht bereits im bisherigen Text genannt wurden. Antworte NUR mit der Fortsetzung, ohne den bisherigen Text zu wiederholen. Antworte auf ${LANG_NAMES[uiLang]}.`;
+    continuation = await callAnthropic(systemPrompt, prompt);
+  }catch(e){
+    continuation = (kind==="success"||kind==="critSuccess") ? "..." : "...";
+  }
+  let combined = `${prefix} ${words.prefix}: ${resultLabel}. ${continuation}`;
+  if(suffix) combined += ` ${suffix}`;
+  return await resolveDiceWithContinuation(combined, systemPrompt);
+}
 
-        function applyStateTags(text) {
-            let out = text;
-            out = out.replace(/\[LOOT:\s*([^\->\]]+)->\s*([^\]]+)\]/gi, (m, item, charName) => {
-                item = item.trim(); charName = charName.trim();
-                if (characterState[charName]) { characterState[charName].inventory.push(item); sessionStats.itemsFound++; }
-                return `(${charName} findet: ${item})`;
-            });
-            out = out.replace(/\[SCHADEN:\s*([^\-\]]+)\s*-\s*(\d+)\]/gi, (m, charName, amount) => {
-                charName = charName.trim();
-                if (characterState[charName]) {
-                    characterState[charName].hp = Math.max(0, characterState[charName].hp - parseInt(amount, 10));
-                }
-                return '';
-            });
-            out = out.replace(/\[HEILUNG:\s*([^\+\]]+)\+\s*(\d+)\]/gi, (m, charName, amount) => {
-                charName = charName.trim();
-                if (characterState[charName]) {
-                    characterState[charName].hp = Math.min(characterState[charName].maxHp, characterState[charName].hp + parseInt(amount, 10));
-                }
-                return '';
-            });
-            out = out.replace(/\[STATUS:\s*([^\+\]]+)\+\s*([^\]]+)\]/gi, (m, charName, effect) => {
-                charName = charName.trim(); effect = effect.trim();
-                if (characterState[charName]) {
-                    if (!characterState[charName].status.includes(effect)) characterState[charName].status.push(effect);
-                }
-                return `(${charName} ist jetzt: ${effect})`;
-            });
-            out = out.replace(/\[STATUS:\s*([^\-\]]+)-\s*([^\]]+)\]/gi, (m, charName, effect) => {
-                charName = charName.trim(); effect = effect.trim();
-                if (characterState[charName]) {
-                    characterState[charName].status = characterState[charName].status.filter(s => s !== effect);
-                }
-                return `(${charName} ist nicht mehr: ${effect})`;
-            });
-            out = out.replace(/\[QUEST:\s*([^\]]+)\]/gi, (m, questText) => {
-                questText = questText.trim();
-                if (!questLog.some(q => q.text === questText)) { questLog.push({ text: questText, done: false }); }
-                renderQuests();
-                return '';
-            });
-            out = out.replace(/\[QUEST_DONE:\s*([^\]]+)\]/gi, (m, questText) => {
-                questText = questText.trim();
-                const q = questLog.find(q => q.text.toLowerCase().includes(questText.toLowerCase()) || questText.toLowerCase().includes(q.text.toLowerCase()));
-                if (q) q.done = true;
-                renderQuests();
-                return '';
-            });
-            return out;
-        }
+function applyStateTags(text){
+  let out = text;
+  out = out.replace(/\[LOOT:\s*([^\->\]]+)->\s*([^\]]+)\]/gi, (m, item, charName) => {
+    item = item.trim(); charName = charName.trim();
+    if(characterState[charName]){ characterState[charName].inventory.push(item); sessionStats.itemsFound++; }
+    return `(${charName} findet: ${item})`;
+  });
+  out = out.replace(/\[SCHADEN:\s*([^\-\]]+)\s*-\s*(\d+)\]/gi, (m, charName, amount) => {
+    charName = charName.trim();
+    if(characterState[charName]){
+      characterState[charName].hp = Math.max(0, characterState[charName].hp - parseInt(amount,10));
+    }
+    return '';
+  });
+  out = out.replace(/\[HEILUNG:\s*([^\+\]]+)\+\s*(\d+)\]/gi, (m, charName, amount) => {
+    charName = charName.trim();
+    if(characterState[charName]){
+      characterState[charName].hp = Math.min(characterState[charName].maxHp, characterState[charName].hp + parseInt(amount,10));
+    }
+    return '';
+  });
+  out = out.replace(/\[STATUS:\s*([^\+\]]+)\+\s*([^\]]+)\]/gi, (m, charName, effect) => {
+    charName = charName.trim(); effect = effect.trim();
+    if(characterState[charName]){
+      if(!characterState[charName].status.includes(effect)) characterState[charName].status.push(effect);
+    }
+    return `(${charName} ist jetzt: ${effect})`;
+  });
+  out = out.replace(/\[STATUS:\s*([^\-\]]+)-\s*([^\]]+)\]/gi, (m, charName, effect) => {
+    charName = charName.trim(); effect = effect.trim();
+    if(characterState[charName]){
+      characterState[charName].status = characterState[charName].status.filter(s => s !== effect);
+    }
+    return `(${charName} ist nicht mehr: ${effect})`;
+  });
+  out = out.replace(/\[QUEST:\s*([^\]]+)\]/gi, (m, questText) => {
+    questText = questText.trim();
+    if(!questLog.some(q => q.text === questText)){ questLog.push({text: questText, done: false}); }
+    renderQuests();
+    return '';
+  });
+  out = out.replace(/\[QUEST_DONE:\s*([^\]]+)\]/gi, (m, questText) => {
+    questText = questText.trim();
+    const q = questLog.find(q => q.text.toLowerCase().includes(questText.toLowerCase()) || questText.toLowerCase().includes(q.text.toLowerCase()));
+    if(q) q.done = true;
+    renderQuests();
+    return '';
+  });
+  return out;
+}
 
-        function postProcess(text) {
-            let out = resolveDiceTags(text);
-            out = applyStateTags(out);
-            out = out.replace(/\s+([.,!?])/g, '$1').replace(/[ \t]{2,}/g, ' ').trim();
-            return out;
-        }
+function postProcess(text){
+  let out = resolveDiceTags(text);
+  out = applyStateTags(out);
+  out = out.replace(/\s+([.,!?])/g, '$1').replace(/[ \t]{2,}/g, ' ').trim();
+  return out;
+}
 
-        async function callAnthropic(systemPrompt, userPrompt, codeOverride) {
-            const resp = await fetch("/api/chat", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    "x-access-code": codeOverride || accessCode
-                },
-                body: JSON.stringify({
-                    max_tokens: 400,
-                    system: systemPrompt,
-                    messages: [{ role: "user", content: userPrompt }]
-                })
-            });
-            if (!resp.ok) {
-                const errText = await resp.text();
-                if (resp.status === 429) {
-                    throw new Error("Das Tageslimit für diese Sitzung ist erreicht. Morgen geht's weiter - oder unterstütze das Projekt mit einer Spende (Link oben), damit das Limit steigen kann.");
-                }
-                throw new Error(`Server-Fehler (${resp.status}): ${errText.slice(0, 200)}`);
-            }
-            const data = await resp.json();
-            return data.content.map(b => b.text || "").join("").trim();
-        }
+async function callAnthropic(systemPrompt, userPrompt, keyOverride){
+  const resp = await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "x-api-key": keyOverride || anthropicKey,
+      "anthropic-version": "2023-06-01",
+      "anthropic-dangerous-direct-browser-access": "true"
+    },
+    body: JSON.stringify({
+      model: "claude-sonnet-4-6",
+      max_tokens: 400,
+      system: systemPrompt,
+      messages: [{role: "user", content: userPrompt}]
+    })
+  });
+  if(!resp.ok){
+    const errText = await resp.text();
+    throw new Error(`Anthropic API Fehler (${resp.status}): ${errText.slice(0,200)}`);
+  }
+  const data = await resp.json();
+  return data.content.map(b => b.text || "").join("").trim();
+}
 
-        function initiativeSummaryText() {
-            if (!initiativeOrder.length) return "keine (kein aktiver Kampf)";
-            return initiativeOrder.map((n, i) => `${i + 1}. ${n}`).join(', ');
-        }
+function initiativeSummaryText(){
+  if(!initiativeOrder.length) return "keine (kein aktiver Kampf)";
+  return initiativeOrder.map((n, i) => `${i+1}. ${n}`).join(', ');
+}
 
-        async function callAgent(agentName) {
-            const agent = AGENTS[agentName];
-            const context = buildContext();
-            const instruction = `Aktueller Zustand: ${stateSummary()}\nCharakter-Arten: ${speciesSummaryText()}\nZiele: ${questSummaryText()}\nInitiative-Reihenfolge: ${initiativeSummaryText()}\n\nDu bist jetzt am Zug als ${agentName}. Der Erzähler hat dich gerade direkt angesprochen oder deine Reaktion ist offensichtlich gefragt. Antworte passend zur Situation.`;
-            const prompt = `Bisheriger Verlauf:\n${context}\n\n${instruction}`;
-            return await callAnthropic(agent.system, prompt);
-        }
+async function callAgent(agentName){
+  const agent = AGENTS[agentName];
+  const context = buildContext();
+  const instruction = `Aktueller Zustand: ${stateSummary()}\nCharakter-Arten: ${speciesSummaryText()}\nZiele: ${questSummaryText()}\nInitiative-Reihenfolge: ${initiativeSummaryText()}\n\nDu bist jetzt am Zug als ${agentName}. Der Erzähler hat dich gerade direkt angesprochen oder deine Reaktion ist offensichtlich gefragt. Antworte passend zur Situation.`;
+  const prompt = `Bisheriger Verlauf:\n${context}\n\n${instruction}`;
+  return await callAnthropic(agent.system, prompt);
+}
 
-        async function callNarratorAI() {
-            const context = buildContext();
-            const prompt = `Bisheriger Verlauf:\n${context}\n\nAktueller Zustand: ${stateSummary()}\nCharakter-Arten: ${speciesSummaryText()}\nZiele: ${questSummaryText()}\nInitiative-Reihenfolge: ${initiativeSummaryText()}\n\nErzähle die nächste kurze Szene weiter und sprich dabei gezielt einen oder mehrere Charaktere mit Namen an. Wenn eine Initiative-Reihenfolge aktiv ist, halte dich bei Kampfhandlungen an diese Reihenfolge. Fordere bei unsicheren Aktionen einen Würfelwurf wie instruiert. WICHTIG: Falls du dabei einen menschlich gesteuerten Charakter ansprichst/fragst, höre an genau dieser Stelle auf zu schreiben - erfinde auf keinen Fall selbst, was er antwortet oder tut, würfle nicht für ihn.`;
-            return await callAnthropic(narratorSystemPrompt, prompt);
-        }
+async function callNarratorAI(){
+  const context = buildContext();
+  const prompt = `Bisheriger Verlauf:\n${context}\n\nAktueller Zustand: ${stateSummary()}\nCharakter-Arten: ${speciesSummaryText()}\nZiele: ${questSummaryText()}\nInitiative-Reihenfolge: ${initiativeSummaryText()}\n\nErzähle die nächste kurze Szene weiter und sprich dabei gezielt einen oder mehrere Charaktere mit Namen an. Wenn eine Initiative-Reihenfolge aktiv ist, halte dich bei Kampfhandlungen an diese Reihenfolge. Fordere bei unsicheren Aktionen einen Würfelwurf wie instruiert. WICHTIG: Falls du dabei einen menschlich gesteuerten Charakter ansprichst/fragst, höre an genau dieser Stelle auf zu schreiben - erfinde auf keinen Fall selbst, was er antwortet oder tut, würfle nicht für ihn.`;
+  return await callAnthropic(narratorSystemPrompt, prompt);
+}
 
-        async function callNarratorReactToHuman(name, actionText) {
-            const context = buildContext();
-            const prompt = `Bisheriger Verlauf:\n${context}\n\nAktueller Zustand: ${stateSummary()}\nCharakter-Arten: ${speciesSummaryText()}\nZiele: ${questSummaryText()}\nInitiative-Reihenfolge: ${initiativeSummaryText()}\n\nDer von einem Menschen gespielte Charakter ${name} hat gerade Folgendes getan/gesagt: "${actionText}"\n\nReagiere AUSSCHLIESSLICH auf diese konkrete Aktion. Entscheide NICHT eigenständig, was ${name} als Nächstes tut, sagt oder fühlt - das entscheidet ausschließlich der menschliche Spieler selbst, nicht du. SEHR WICHTIG: Erfinde KEINE zusätzlichen Handlungen für ${name}, die er nicht selbst genannt hat (z.B. wenn er nur sagt "ich schaue mich um", darfst du NUR beschreiben, was er sieht/wahrnimmt - erfinde nicht zusätzlich, dass er etwas greift, festhält, sich bewegt oder sonst etwas tut). GANZ WICHTIG - Absicht vs. Ausführung: Wenn ${name} nur eine Absicht äußert oder bei etwas mitmachen/teilnehmen/beitreten möchte (z.B. "ich möchte beim Wettbewerb mitmachen"), ist das NOCH NICHT die eigentliche Aktion selbst (z.B. der tatsächliche Wurf/Schlag/Versuch) - beschreibe dann NUR, wie er sich einreiht/vorbereitet/die Situation entsteht, aber führe die eigentliche Aktion NICHT für ihn aus und würfle NICHT dafür. Warte auf eine weitere, konkrete Eingabe von ${name} (z.B. "ich werfe jetzt"), bevor diese Aktion selbst gewürfelt/aufgelöst wird. Würfle nur für die tatsächlich beschriebene, konkret ausgeführte Handlung, nicht für bloße Absichten. Wenn doch gewürfelt wird, gilt: NUR wenn die Aktion tatsächlich riskant/ungewiss ist. Prüfe anhand der Art von ${name}, ob die Aktion möglich ist. Sprich am Ende nicht automatisch weitere Charaktere mit neuen eigenen Handlungsanweisungen an, außer eine unmittelbare Reaktion ist unumgänglich (z.B. ein Gegner reagiert direkt auf die Aktion). Beende deine Antwort klar erkennbar damit, dass ${name} (oder ein anderer angesprochener Charakter) wieder am Zug ist - entweder implizit durch eine offene Situation oder explizit mit einer kurzen Frage.`;
-            return await callAnthropic(narratorSystemPrompt, prompt);
-        }
+async function callNarratorReactToHuman(name, actionText){
+  const context = buildContext();
+  const prompt = `Bisheriger Verlauf:\n${context}\n\nAktueller Zustand: ${stateSummary()}\nCharakter-Arten: ${speciesSummaryText()}\nZiele: ${questSummaryText()}\nInitiative-Reihenfolge: ${initiativeSummaryText()}\n\nDer von einem Menschen gespielte Charakter ${name} hat gerade Folgendes getan/gesagt: "${actionText}"\n\nReagiere AUSSCHLIESSLICH auf diese konkrete Aktion. Entscheide NICHT eigenständig, was ${name} als Nächstes tut, sagt oder fühlt - das entscheidet ausschließlich der menschliche Spieler selbst, nicht du. SEHR WICHTIG: Erfinde KEINE zusätzlichen Handlungen für ${name}, die er nicht selbst genannt hat (z.B. wenn er nur sagt "ich schaue mich um", darfst du NUR beschreiben, was er sieht/wahrnimmt - erfinde nicht zusätzlich, dass er etwas greift, festhält, sich bewegt oder sonst etwas tut). GANZ WICHTIG - Absicht vs. Ausführung: Wenn ${name} nur eine Absicht äußert oder bei etwas mitmachen/teilnehmen/beitreten möchte (z.B. "ich möchte beim Wettbewerb mitmachen"), ist das NOCH NICHT die eigentliche Aktion selbst (z.B. der tatsächliche Wurf/Schlag/Versuch) - beschreibe dann NUR, wie er sich einreiht/vorbereitet/die Situation entsteht, aber führe die eigentliche Aktion NICHT für ihn aus und würfle NICHT dafür. Warte auf eine weitere, konkrete Eingabe von ${name} (z.B. "ich werfe jetzt"), bevor diese Aktion selbst gewürfelt/aufgelöst wird. Würfle nur für die tatsächlich beschriebene, konkret ausgeführte Handlung, nicht für bloße Absichten. Wenn doch gewürfelt wird, gilt: NUR wenn die Aktion tatsächlich riskant/ungewiss ist. Prüfe anhand der Art von ${name}, ob die Aktion möglich ist. Sprich am Ende nicht automatisch weitere Charaktere mit neuen eigenen Handlungsanweisungen an, außer eine unmittelbare Reaktion ist unumgänglich (z.B. ein Gegner reagiert direkt auf die Aktion). Beende deine Antwort klar erkennbar damit, dass ${name} (oder ein anderer angesprochener Charakter) wieder am Zug ist - entweder implizit durch eine offene Situation oder explizit mit einer kurzen Frage.`;
+  return await callAnthropic(narratorSystemPrompt, prompt);
+}
 
 
 
-        function findMentionedCharacters(text) {
-            const mentions = [];
-            CHAR_NAMES.forEach(name => {
-                const re = new RegExp(`\\b${name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'i');
-                const match = text.match(re);
-                if (match) { mentions.push({ name, index: match.index }); }
-            });
-            mentions.sort((a, b) => a.index - b.index);
-            return mentions.map(m => m.name);
-        }
+function findMentionedCharacters(text){
+  const mentions = [];
+  CHAR_NAMES.forEach(name => {
+    const re = new RegExp(`\\b${name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'i');
+    const match = text.match(re);
+    if(match){ mentions.push({name, index: match.index}); }
+  });
+  mentions.sort((a, b) => a.index - b.index);
+  return mentions.map(m => m.name);
+}
 
-        async function finalizeAndAppend(speaker, text) {
-            const clean = postProcess(text);
-            storyLog.push({ speaker, text: clean });
-            appendEntry(speaker, clean);
-            if (/Wurf: kritischer Erfolg/i.test(clean)) playDiceSound('crit-success');
-            else if (/Wurf: kritischer Fehlschlag/i.test(clean)) playDiceSound('crit-fail');
-            else if (/Wurf: Erfolg/i.test(clean)) playDiceSound('success');
-            else if (/Wurf: Fehlschlag/i.test(clean)) playDiceSound('fail');
-            renderRoster(null);
-            setStatus("");
-        }
+async function finalizeAndAppend(speaker, text){
+  const clean = postProcess(text);
+  storyLog.push({speaker, text: clean});
+  appendEntry(speaker, clean);
+  const words = DICE_WORDS[uiLang];
+  const prefixEsc = words.prefix.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+  if(new RegExp(`${prefixEsc}: ${words.critSuccess}`, 'i').test(clean)) playDiceSound('crit-success');
+  else if(new RegExp(`${prefixEsc}: ${words.critFail}`, 'i').test(clean)) playDiceSound('crit-fail');
+  else if(new RegExp(`${prefixEsc}: ${words.success}\\b`, 'i').test(clean)) playDiceSound('success');
+  else if(new RegExp(`${prefixEsc}: ${words.fail}\\b`, 'i').test(clean)) playDiceSound('fail');
+  renderRoster(null);
+  setStatus("");
+}
 
-        async function cascadeCharacterReactions(text) {
-            const mentioned = findMentionedCharacters(text);
-            for (const name of mentioned) {
-                const agent = AGENTS[name];
-                if (!agent || agent.isHuman) continue;
-                renderRoster(name);
-                setStatus(`${name} überlegt...`);
-                try {
-                    const raw = await callAgent(name);
-                    const withDice = await resolveDiceWithContinuation(raw, agent.system);
-                    await finalizeAndAppend(name, withDice);
-                } catch (e) {
-                    appendEntry("System", e.message, true);
-                    setStatus(e.message, true);
-                }
-            }
-            return mentioned;
-        }
+async function cascadeCharacterReactions(text){
+  const mentioned = findMentionedCharacters(text);
+  for(const name of mentioned){
+    const agent = AGENTS[name];
+    if(!agent || agent.isHuman) continue;
+    renderRoster(name);
+    setStatus(`${name} überlegt...`);
+    try{
+      const raw = await callAgent(name);
+      const withDice = await resolveDiceWithContinuation(raw, agent.system);
+      await finalizeAndAppend(name, withDice);
+    }catch(e){
+      appendEntry("System", e.message, true);
+      setStatus(e.message, true);
+    }
+  }
+  return mentioned;
+}
 
-        async function submitUserNarration(rawText) {
-            if (!rawText) return;
-            const resolved = resolveDiceSimple(rawText);
-            await finalizeAndAppend("Erzähler", resolved);
-            await cascadeCharacterReactions(resolved);
-        }
+async function submitUserNarration(rawText){
+  if(!rawText) return;
+  const resolved = resolveDiceSimple(rawText);
+  await finalizeAndAppend("Erzähler", resolved);
+  await cascadeCharacterReactions(resolved);
+}
 
-        let autoNarrate = true;
-        let autoNarrateCount = 0;
-        const AUTO_NARRATE_MAX = 15;
+let autoNarrate = true;
+let autoNarrateCount = 0;
+const AUTO_NARRATE_MAX = 15;
 
-        async function afterNarratorText(withDice) {
-            const mentioned = await cascadeCharacterReactions(withDice);
-            const humanMentioned = mentioned.some(n => AGENTS[n] && AGENTS[n].isHuman);
-            if (humanMentioned || !autoNarrate || narratorMode !== 'ai') {
-                autoNarrateCount = 0;
-                return;
-            }
-            autoNarrateCount++;
-            if (autoNarrateCount > AUTO_NARRATE_MAX) {
-                setStatus('Automatische Fortsetzung pausiert (Sicherheitslimit) – klicke "KI erzählt weiter", um fortzufahren.');
-                return;
-            }
-            setTimeout(submitAINarratorTurn, 900);
-        }
+async function afterNarratorText(withDice){
+  const mentioned = await cascadeCharacterReactions(withDice);
+  const humanMentioned = mentioned.some(n => AGENTS[n] && AGENTS[n].isHuman);
+  if(humanMentioned || !autoNarrate || narratorMode !== 'ai'){
+    autoNarrateCount = 0;
+    return;
+  }
+  autoNarrateCount++;
+  if(autoNarrateCount > AUTO_NARRATE_MAX){
+    setStatus('Automatische Fortsetzung pausiert (Sicherheitslimit) – klicke "KI erzählt weiter", um fortzufahren.');
+    return;
+  }
+  setTimeout(submitAINarratorTurn, 900);
+}
 
-        async function submitAINarratorTurn() {
-            setStatus("Erzähler überlegt...");
-            try {
-                const raw = await callNarratorAI();
-                const withDice = await resolveDiceWithContinuation(raw, narratorSystemPrompt);
-                await finalizeAndAppend("Erzähler", withDice);
-                await afterNarratorText(withDice);
-            } catch (e) {
-                appendEntry("System", e.message, true);
-                setStatus(e.message, true);
-            }
-        }
+async function submitAINarratorTurn(){
+  setStatus("Erzähler überlegt...");
+  try{
+    const raw = await callNarratorAI();
+    const withDice = await resolveDiceWithContinuation(raw, narratorSystemPrompt);
+    await finalizeAndAppend("Erzähler", withDice);
+    await afterNarratorText(withDice);
+  }catch(e){
+    appendEntry("System", e.message, true);
+    setStatus(e.message, true);
+  }
+}
 
-        async function submitHumanCharacterLine(name, rawText) {
-            if (!rawText) return;
-            autoNarrateCount = 0;
-            const resolved = resolveDiceSimple(rawText);
-            await finalizeAndAppend(name, resolved);
-            if (narratorMode === 'ai') {
-                setStatus("Erzähler überlegt...");
-                try {
-                    const raw = await callNarratorReactToHuman(name, resolved);
-                    const withDice = await resolveDiceWithContinuation(raw, narratorSystemPrompt);
-                    await finalizeAndAppend("Erzähler", withDice);
-                    await afterNarratorText(withDice);
-                } catch (e) {
-                    appendEntry("System", e.message, true);
-                    setStatus(e.message, true);
-                }
-            }
-        }
+async function submitHumanCharacterLine(name, rawText){
+  if(!rawText) return;
+  autoNarrateCount = 0;
+  const resolved = resolveDiceSimple(rawText);
+  await finalizeAndAppend(name, resolved);
+  if(narratorMode === 'ai'){
+    setStatus("Erzähler überlegt...");
+    try{
+      const raw = await callNarratorReactToHuman(name, resolved);
+      const withDice = await resolveDiceWithContinuation(raw, narratorSystemPrompt);
+      await finalizeAndAppend("Erzähler", withDice);
+      await afterNarratorText(withDice);
+    }catch(e){
+      appendEntry("System", e.message, true);
+      setStatus(e.message, true);
+    }
+  }
+}
 
-        document.getElementById('startBtn').addEventListener('click', async () => {
-            const rawAnthropic = document.getElementById('accessCode').value.trim();
-            accessCode = sanitizeKey(rawAnthropic);
-            if (!accessCode) {
-                alert('Bitte trag deinen Zugangscode ein.');
-                return;
-            }
-            const scene = document.getElementById('startScene').value.trim() || "Die Gruppe betritt die Dunkelheit.";
-            sessionNameGlobal = document.getElementById('sessionName').value.trim();
-            document.getElementById('sessionTitle').textContent = sessionNameGlobal || "D&D Session";
-            document.getElementById('tagline').textContent = narratorMode === 'ai' ? "KI-Erzähler & Charaktere · D&D Session" : "Du als Erzähler & KI-Charaktere · D&D Session";
-            characterState = {};
-            autoNarrateCount = 0;
-            questLog = [];
-            initiativeOrder = [];
-            sessionStats = { rolls: 0, critSuccess: 0, critFail: 0, success: 0, fail: 0, itemsFound: 0 };
-            renderQuests();
-            document.getElementById('setup').style.display = 'none';
-            document.getElementById('charEditor').style.display = 'none';
-            document.getElementById('session').style.display = 'block';
-            setStatus("Sitzung wird vorbereitet...");
-            await buildAgentsFromForm();
-            storyLog = [];
+document.getElementById('startBtn').addEventListener('click', async () => {
+  const rawAnthropic = document.getElementById('anthropicKey').value.trim();
+  anthropicKey = sanitizeKey(rawAnthropic);
+  if(!anthropicKey){
+    alert('Bitte trag deinen Anthropic API Key ein.');
+    return;
+  }
+  const scene = document.getElementById('startScene').value.trim() || "Die Gruppe betritt die Dunkelheit.";
+  sessionNameGlobal = document.getElementById('sessionName').value.trim();
+  document.getElementById('sessionTitle').textContent = sessionNameGlobal || "D&D Session";
+  document.getElementById('tagline').textContent = narratorMode === 'ai' ? "KI-Erzähler & Charaktere · D&D Session" : "Du als Erzähler & KI-Charaktere · D&D Session";
+  characterState = {};
+  autoNarrateCount = 0;
+  questLog = [];
+  initiativeOrder = [];
+  sessionStats = { rolls: 0, critSuccess: 0, critFail: 0, success: 0, fail: 0, itemsFound: 0 };
+  renderQuests();
+  document.getElementById('setup').style.display = 'none';
+  document.getElementById('charEditor').style.display = 'none';
+  document.getElementById('session').style.display = 'block';
+  setStatus("Sitzung wird vorbereitet...");
+  await buildAgentsFromForm();
+  storyLog = [];
 
-            const humanNames = CHAR_NAMES.filter(n => AGENTS[n].isHuman);
-            const humanBlock = document.getElementById('humanCharBlock');
-            if (humanNames.length) {
-                humanBlock.style.display = 'block';
-                document.getElementById('humanCharSelect').innerHTML = humanNames.map(n => `<option value="${n}">${n}</option>`).join('');
-            } else {
-                humanBlock.style.display = 'none';
-            }
+  const humanNames = CHAR_NAMES.filter(n => AGENTS[n].isHuman);
+  const humanBlock = document.getElementById('humanCharBlock');
+  if(humanNames.length){
+    humanBlock.style.display = 'block';
+    document.getElementById('humanCharSelect').innerHTML = humanNames.map(n => `<option value="${n}">${n}</option>`).join('');
+  } else {
+    humanBlock.style.display = 'none';
+  }
 
-            document.getElementById('userNarrationBlock').style.display = narratorMode === 'ai' ? 'none' : 'block';
-            document.getElementById('aiNarrationBlock').style.display = narratorMode === 'ai' ? 'block' : 'none';
-            renderRoster(null);
-            logEl.innerHTML = '';
-            await submitUserNarration(scene);
-        });
+  document.getElementById('userNarrationBlock').style.display = narratorMode === 'ai' ? 'none' : 'block';
+  document.getElementById('aiNarrationBlock').style.display = narratorMode === 'ai' ? 'block' : 'none';
+  renderRoster(null);
+  logEl.innerHTML = '';
+  await submitUserNarration(scene);
+});
 
-        document.getElementById('narrateBtn').addEventListener('click', async () => {
-            const input = document.getElementById('narrationInput');
-            const text = input.value.trim();
-            if (!text) return;
-            input.value = '';
-            await submitUserNarration(text);
-        });
+document.getElementById('narrateBtn').addEventListener('click', async () => {
+  const input = document.getElementById('narrationInput');
+  const text = input.value.trim();
+  if(!text) return;
+  input.value = '';
+  await submitUserNarration(text);
+});
 
-        document.getElementById('aiNarrateBtn').addEventListener('click', async () => {
-            const btn = document.getElementById('aiNarrateBtn');
-            btn.disabled = true;
-            autoNarrateCount = 0;
-            await submitAINarratorTurn();
-            btn.disabled = false;
-        });
+document.getElementById('aiNarrateBtn').addEventListener('click', async () => {
+  const btn = document.getElementById('aiNarrateBtn');
+  btn.disabled = true;
+  autoNarrateCount = 0;
+  await submitAINarratorTurn();
+  btn.disabled = false;
+});
 
-        document.getElementById('autoNarrateToggle').addEventListener('change', (e) => {
-            autoNarrate = e.target.checked;
-        });
+document.getElementById('autoNarrateToggle').addEventListener('change', (e) => {
+  autoNarrate = e.target.checked;
+});
 
-        document.getElementById('humanCharBtn').addEventListener('click', async () => {
-            const name = document.getElementById('humanCharSelect').value;
-            const input = document.getElementById('humanCharInput');
-            const text = input.value.trim();
-            if (!text || !name) return;
-            input.value = '';
-            await submitHumanCharacterLine(name, text);
-        });
+document.getElementById('humanCharBtn').addEventListener('click', async () => {
+  const name = document.getElementById('humanCharSelect').value;
+  const input = document.getElementById('humanCharInput');
+  const text = input.value.trim();
+  if(!text || !name) return;
+  input.value = '';
+  await submitHumanCharacterLine(name, text);
+});
 
-        document.querySelectorAll('.quickActionBtn').forEach(btn => {
-            btn.addEventListener('click', () => {
-                const input = document.getElementById('humanCharInput');
-                input.value = btn.dataset.text;
-                input.focus();
-            });
-        });
+document.querySelectorAll('.quickActionBtn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const input = document.getElementById('humanCharInput');
+    input.value = btn.dataset.text;
+    input.focus();
+  });
+});
 
-        document.getElementById('initiativeBtn').addEventListener('click', () => {
-            const rolled = CHAR_NAMES.map(n => ({ name: n, roll: rollDice(20) }));
-            rolled.sort((a, b) => b.roll - a.roll);
-            initiativeOrder = rolled.map(r => r.name);
-            const summary = rolled.map(r => `${r.name}: ${r.roll}`).join(', ');
-            appendEntry("System", `Initiative ausgewürfelt – Reihenfolge: ${initiativeOrder.join(' → ')} (${summary})`, true);
-            renderRoster(null);
-            playDiceSound('neutral');
-        });
+document.getElementById('initiativeBtn').addEventListener('click', () => {
+  const rolled = CHAR_NAMES.map(n => ({ name: n, roll: rollDice(20) }));
+  rolled.sort((a,b) => b.roll - a.roll);
+  initiativeOrder = rolled.map(r => r.name);
+  const summary = rolled.map(r => `${r.name}: ${r.roll}`).join(', ');
+  appendEntry("System", `Initiative ausgewürfelt – Reihenfolge: ${initiativeOrder.join(' → ')} (${summary})`, true);
+  renderRoster(null);
+  playDiceSound('neutral');
+});
 
-        document.getElementById('clearInitiativeBtn').addEventListener('click', () => {
-            initiativeOrder = [];
-            appendEntry("System", "Initiative-Reihenfolge beendet.", true);
-            renderRoster(null);
-        });
+document.getElementById('clearInitiativeBtn').addEventListener('click', () => {
+  initiativeOrder = [];
+  appendEntry("System", "Initiative-Reihenfolge beendet.", true);
+  renderRoster(null);
+});
 
-        document.getElementById('manualDiceBtn').addEventListener('click', () => {
-            const sides = parseInt(document.getElementById('manualDiceType').value, 10);
-            const roll = rollDice(sides);
-            appendEntry("System", `🎲 Eigener Wurf (W${sides}): ${roll}`, true);
-            playDiceSound('neutral');
-        });
+document.getElementById('manualDiceBtn').addEventListener('click', () => {
+  const sides = parseInt(document.getElementById('manualDiceType').value, 10);
+  const roll = rollDice(sides);
+  appendEntry("System", `🎲 Eigener Wurf (W${sides}): ${roll}`, true);
+  playDiceSound('neutral');
+});
 
-        document.getElementById('summarizeBtn').addEventListener('click', async () => {
-            const btn = document.getElementById('summarizeBtn');
-            if (!storyLog.length) { alert('Noch kein Verlauf vorhanden.'); return; }
-            const key = accessCode || getAnthropicKeyLive();
-            if (!key) return;
-            btn.disabled = true;
-            const original = btn.textContent;
-            btn.textContent = "...";
-            try {
-                const sys = "Du fasst D&D-Sitzungsverläufe kurz und spannend zusammen. Antworte NUR mit der Zusammenfassung in 3-5 Sätzen, ohne Einleitung.";
-                const prompt = `Fasse folgenden bisherigen Spielverlauf zusammen:\n\n${buildContext()}`;
-                const summary = await callAnthropic(sys, prompt, key);
-                appendEntry("System", "📜 Zusammenfassung: " + summary, true);
-            } catch (err) {
-                alert('Fehler bei der Zusammenfassung: ' + err.message);
-            }
-            btn.disabled = false;
-            btn.textContent = original;
-        });
+document.getElementById('summarizeBtn').addEventListener('click', async () => {
+  const btn = document.getElementById('summarizeBtn');
+  if(!storyLog.length){ alert('Noch kein Verlauf vorhanden.'); return; }
+  const key = anthropicKey || getAnthropicKeyLive();
+  if(!key) return;
+  btn.disabled = true;
+  const original = btn.textContent;
+  btn.textContent = "...";
+  try{
+    const sys = `Du fasst D&D-Sitzungsverläufe kurz und spannend zusammen. Antworte NUR mit der Zusammenfassung in 3-5 Sätzen, ohne Einleitung. Antworte auf ${LANG_NAMES[uiLang]}.`;
+    const prompt = `Fasse folgenden bisherigen Spielverlauf zusammen:\n\n${buildContext()}`;
+    const summary = await callAnthropic(sys, prompt, key);
+    appendEntry("System", "📜 Zusammenfassung: " + summary, true);
+  }catch(err){
+    alert('Fehler bei der Zusammenfassung: ' + err.message);
+  }
+  btn.disabled = false;
+  btn.textContent = original;
+});
 
-        document.getElementById('statsBtn').addEventListener('click', () => {
-            const s = sessionStats;
-            const text = `🎲 Würfe gesamt: ${s.rolls} · Erfolge: ${s.success} · Fehlschläge: ${s.fail} · Kritische Erfolge: ${s.critSuccess} · Kritische Fehlschläge: ${s.critFail} · Gefundene Gegenstände: ${s.itemsFound}`;
-            appendEntry("System", text, true);
-        });
+document.getElementById('statsBtn').addEventListener('click', () => {
+  const s = sessionStats;
+  const text = `🎲 Würfe gesamt: ${s.rolls} · Erfolge: ${s.success} · Fehlschläge: ${s.fail} · Kritische Erfolge: ${s.critSuccess} · Kritische Fehlschläge: ${s.critFail} · Gefundene Gegenstände: ${s.itemsFound}`;
+  appendEntry("System", text, true);
+});
 
-        document.getElementById('saveSessionBtn').addEventListener('click', () => {
-            const data = {
-                format: "dnd-session-save",
-                version: 1,
-                sessionName: sessionNameGlobal,
-                narratorMode: narratorMode,
-                narratorSystemPrompt: narratorSystemPrompt,
-                agents: AGENTS,
-                charNames: CHAR_NAMES,
-                characterSpecies: characterSpecies,
-                characterState: characterState,
-                storyLog: storyLog,
-                questLog: questLog,
-                sessionStats: sessionStats,
-                savedAt: new Date().toISOString()
-            };
-            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json;charset=utf-8' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `${(sessionNameGlobal || 'dnd-session').replace(/[^a-z0-9\-_]/gi, '_')}.json`;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-        });
+document.getElementById('saveSessionBtn').addEventListener('click', () => {
+  const data = {
+    format: "dnd-session-save",
+    version: 1,
+    sessionName: sessionNameGlobal,
+    narratorMode: narratorMode,
+    narratorSystemPrompt: narratorSystemPrompt,
+    agents: AGENTS,
+    charNames: CHAR_NAMES,
+    characterSpecies: characterSpecies,
+    characterState: characterState,
+    storyLog: storyLog,
+    questLog: questLog,
+    sessionStats: sessionStats,
+    savedAt: new Date().toISOString()
+  };
+  const blob = new Blob([JSON.stringify(data, null, 2)], {type: 'application/json;charset=utf-8'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `${(sessionNameGlobal || 'dnd-session').replace(/[^a-z0-9\-_]/gi, '_')}.json`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+});
 
-        let loadedSessionData = null;
-        document.getElementById('loadFile').addEventListener('change', (e) => {
-            const file = e.target.files[0];
-            if (!file) return;
-            const reader = new FileReader();
-            reader.onload = (ev) => {
-                try {
-                    loadedSessionData = JSON.parse(ev.target.result);
-                    document.getElementById('continueBtn').style.display = 'inline-block';
-                    document.getElementById('loadStatus').textContent = `Geladen: "${loadedSessionData.sessionName || 'unbenannte Sitzung'}" (${(loadedSessionData.storyLog || []).length} Einträge). Trag unten deinen API Key ein und klicke "Geladene Sitzung fortsetzen".`;
-                } catch (err) {
-                    loadedSessionData = null;
-                    document.getElementById('continueBtn').style.display = 'none';
-                    document.getElementById('loadStatus').textContent = 'Diese Datei konnte nicht gelesen werden - ist es eine gültige Sitzungsdatei?';
-                }
-            };
-            reader.readAsText(file);
-        });
+let loadedSessionData = null;
+document.getElementById('loadFile').addEventListener('change', (e) => {
+  const file = e.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = (ev) => {
+    try{
+      loadedSessionData = JSON.parse(ev.target.result);
+      document.getElementById('continueBtn').style.display = 'inline-block';
+      document.getElementById('loadStatus').textContent = `Geladen: "${loadedSessionData.sessionName || 'unbenannte Sitzung'}" (${(loadedSessionData.storyLog||[]).length} Einträge). Trag unten deinen API Key ein und klicke "Geladene Sitzung fortsetzen".`;
+    }catch(err){
+      loadedSessionData = null;
+      document.getElementById('continueBtn').style.display = 'none';
+      document.getElementById('loadStatus').textContent = 'Diese Datei konnte nicht gelesen werden - ist es eine gültige Sitzungsdatei?';
+    }
+  };
+  reader.readAsText(file);
+});
 
-        document.getElementById('continueBtn').addEventListener('click', async () => {
-            const rawAnthropic = document.getElementById('accessCode').value.trim();
-            accessCode = sanitizeKey(rawAnthropic);
-            if (!accessCode) { alert('Bitte trag deinen Zugangscode ein.'); return; }
-            if (!loadedSessionData) { alert('Keine Sitzungsdatei geladen.'); return; }
+document.getElementById('continueBtn').addEventListener('click', async () => {
+  const rawAnthropic = document.getElementById('anthropicKey').value.trim();
+  anthropicKey = sanitizeKey(rawAnthropic);
+  if(!anthropicKey){ alert('Bitte trag deinen Anthropic API Key ein.'); return; }
+  if(!loadedSessionData){ alert('Keine Sitzungsdatei geladen.'); return; }
 
-            sessionNameGlobal = loadedSessionData.sessionName || "";
-            narratorMode = loadedSessionData.narratorMode || "user";
-            narratorSystemPrompt = loadedSessionData.narratorSystemPrompt || "";
-            AGENTS = loadedSessionData.agents || {};
-            CHAR_NAMES = loadedSessionData.charNames || [];
-            characterSpecies = loadedSessionData.characterSpecies || {};
-            characterState = loadedSessionData.characterState || {};
-            storyLog = loadedSessionData.storyLog || [];
-            questLog = loadedSessionData.questLog || [];
-            sessionStats = loadedSessionData.sessionStats || { rolls: 0, critSuccess: 0, critFail: 0, success: 0, fail: 0, itemsFound: 0 };
-            initiativeOrder = [];
-            autoNarrateCount = 0;
+  sessionNameGlobal = loadedSessionData.sessionName || "";
+  narratorMode = loadedSessionData.narratorMode || "user";
+  narratorSystemPrompt = loadedSessionData.narratorSystemPrompt || "";
+  AGENTS = loadedSessionData.agents || {};
+  CHAR_NAMES = loadedSessionData.charNames || [];
+  characterSpecies = loadedSessionData.characterSpecies || {};
+  characterState = loadedSessionData.characterState || {};
+  storyLog = loadedSessionData.storyLog || [];
+  questLog = loadedSessionData.questLog || [];
+  sessionStats = loadedSessionData.sessionStats || { rolls: 0, critSuccess: 0, critFail: 0, success: 0, fail: 0, itemsFound: 0 };
+  initiativeOrder = [];
+  autoNarrateCount = 0;
 
-            document.getElementById('sessionTitle').textContent = sessionNameGlobal || "D&D Session";
-            document.getElementById('tagline').textContent = narratorMode === 'ai' ? "KI-Erzähler & Charaktere · D&D Session" : "Du als Erzähler & KI-Charaktere · D&D Session";
+  document.getElementById('sessionTitle').textContent = sessionNameGlobal || "D&D Session";
+  document.getElementById('tagline').textContent = narratorMode === 'ai' ? "KI-Erzähler & Charaktere · D&D Session" : "Du als Erzähler & KI-Charaktere · D&D Session";
 
-            document.getElementById('setup').style.display = 'none';
-            document.getElementById('charEditor').style.display = 'none';
-            document.getElementById('loadPanel').style.display = 'none';
-            document.getElementById('session').style.display = 'block';
+  document.getElementById('setup').style.display = 'none';
+  document.getElementById('charEditor').style.display = 'none';
+  document.getElementById('loadPanel').style.display = 'none';
+  document.getElementById('session').style.display = 'block';
 
-            const humanNames = CHAR_NAMES.filter(n => AGENTS[n] && AGENTS[n].isHuman);
-            const humanBlock = document.getElementById('humanCharBlock');
-            if (humanNames.length) {
-                humanBlock.style.display = 'block';
-                document.getElementById('humanCharSelect').innerHTML = humanNames.map(n => `<option value="${n}">${n}</option>`).join('');
-            } else {
-                humanBlock.style.display = 'none';
-            }
-            document.getElementById('userNarrationBlock').style.display = narratorMode === 'ai' ? 'none' : 'block';
-            document.getElementById('aiNarrationBlock').style.display = narratorMode === 'ai' ? 'block' : 'none';
+  const humanNames = CHAR_NAMES.filter(n => AGENTS[n] && AGENTS[n].isHuman);
+  const humanBlock = document.getElementById('humanCharBlock');
+  if(humanNames.length){
+    humanBlock.style.display = 'block';
+    document.getElementById('humanCharSelect').innerHTML = humanNames.map(n => `<option value="${n}">${n}</option>`).join('');
+  } else {
+    humanBlock.style.display = 'none';
+  }
+  document.getElementById('userNarrationBlock').style.display = narratorMode === 'ai' ? 'none' : 'block';
+  document.getElementById('aiNarrationBlock').style.display = narratorMode === 'ai' ? 'block' : 'none';
 
-            renderRoster(null);
-            renderQuests();
-            logEl.innerHTML = '';
-            storyLog.forEach(e => appendEntry(e.speaker, e.text));
-            setStatus('Sitzung geladen – weiter geht\'s.');
-        });
+  renderRoster(null);
+  renderQuests();
+  logEl.innerHTML = '';
+  storyLog.forEach(e => appendEntry(e.speaker, e.text));
+  setStatus('Sitzung geladen – weiter geht\'s.');
+});
 
-        document.getElementById('saveBtn').addEventListener('click', () => {
-            const header = `Sitzung: ${sessionNameGlobal || 'D&D Session'}\nDatum: ${new Date().toLocaleString('de-DE')}\n\n`;
-            const body = storyLog.map(e => `${e.speaker}: ${e.text}`).join('\n\n');
-            const blob = new Blob([header + body], { type: 'text/plain;charset=utf-8' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `${(sessionNameGlobal || 'dnd-session').replace(/[^a-z0-9\-_]/gi, '_')}.txt`;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-        });
+document.getElementById('saveBtn').addEventListener('click', () => {
+  const header = `Sitzung: ${sessionNameGlobal || 'D&D Session'}\nDatum: ${new Date().toLocaleString('de-DE')}\n\n`;
+  const body = storyLog.map(e => `${e.speaker}: ${e.text}`).join('\n\n');
+  const blob = new Blob([header + body], {type: 'text/plain;charset=utf-8'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `${(sessionNameGlobal || 'dnd-session').replace(/[^a-z0-9\-_]/gi, '_')}.txt`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+});
 
-        document.getElementById('resetBtn').addEventListener('click', () => {
-            document.getElementById('setup').style.display = 'block';
-            document.getElementById('charEditor').style.display = 'block';
-            document.getElementById('loadPanel').style.display = 'block';
-            document.getElementById('session').style.display = 'none';
-        });
-    </script>
+document.getElementById('resetBtn').addEventListener('click', () => {
+  document.getElementById('setup').style.display = 'block';
+  document.getElementById('charEditor').style.display = 'block';
+  document.getElementById('loadPanel').style.display = 'block';
+  document.getElementById('session').style.display = 'none';
+});
+</script>
 </body>
 </html>
